@@ -1,0 +1,34 @@
+config = {
+    'irc': {
+        'server': 'irc.freenode.net',
+        'port': 6697,
+        'nick': 'XiaoT',
+        'ssl': True,
+        'blacklist': [
+            '[Olaf]',
+        ],
+    },
+
+    'telegram': {
+        'server': '127.0.0.1',
+        'port': 1235,
+        'me': 'user#107279837',
+    },
+
+    'photo_store': {
+        # set one in ("imgur", "vim-cn")
+        'provider': "vim-cn",
+        'options': {
+            'client_id': "",
+        }
+    },
+
+    'bindings': {
+        "archlinux-cn": {
+            "irc": '#archlinux-cn',
+            "telegram": 'chat#12889958',
+        }
+    }
+}
+
+# vim: ft=python
