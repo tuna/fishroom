@@ -213,6 +213,29 @@ class Telegram(BaseBotInstance):
 
         return int(size) + 1
 
+    def handle_command(self, msg):
+        # handle command
+        user_id = msg.user_id
+        target = "user#" + str(user_id)
+        try:
+            tmp = msg.content.split()
+            cmd = tmp[0][1:].lower()
+            args = tmp[1:]
+        except:
+            self.send_msg(target, "Invalid Command")
+            return
+
+        if cmd == "nick":
+            nick = args[0]
+            self.nick_store.set_nickname(user_id, nick)
+            self.send_msg(target, "Changed nickname to '%s'" % nick)
+        else:
+            self.send_msg(
+                target,
+                "Invalid Command, user '.nick nickname'"
+                "to change nickname."
+            )
+
     def message_stream(self, id_blacklist=None):
         """Iterator of messages.
 
@@ -247,6 +270,10 @@ class Telegram(BaseBotInstance):
             if telemsg is None or telemsg.user_id in id_blacklist:
                 continue
 
+            if telemsg.chat_id is None and telemsg.content.startswith("."):
+                self.handle_command(telemsg)
+                continue
+
             nickname = self.nick_store.get_nickname(
                 telemsg.user_id, telemsg.username)
 
@@ -275,7 +302,7 @@ if __name__ == '__main__':
     from .photostore import VimCN
     from .textstore import Vinergy
 
-    tele = Telegram('127.0.0.1', 1235, nick_store=MemNickStore(),
+    tele = Telegram('127.0.0.1', 27219, nick_store=MemNickStore(),
                     photo_store=VimCN(), text_store=Vinergy())
     # tele.send_msg('user#67655173', 'hello')
     for msg in tele.message_stream():
