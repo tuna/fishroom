@@ -52,7 +52,8 @@ def init_irc():
     port = config['irc']['port']
     nickname = config['irc']['nick']
     usessl = config['irc']['ssl']
-    return IRCHandle(server, port, usessl, nickname, irc_channels)
+    blacklist = config['irc']['blacklist']
+    return IRCHandle(server, port, usessl, nickname, irc_channels, blacklist)
 
 
 def init_xmpp():
