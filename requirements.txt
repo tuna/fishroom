@@ -5,5 +5,3 @@ tornado-redis
 irc
 requests
 sleekxmpp
-dnspython
-pyasn1-modules

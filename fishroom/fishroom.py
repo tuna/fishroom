@@ -7,6 +7,7 @@ from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy
 from .telegram import RedisNickStore, Telegram, TelegramThread
 from .irchandle import IRCHandle, IRCThread
+from .xmpp import XMPPHandle, XMPPThread
 
 from .config import config
 
@@ -54,6 +55,16 @@ def init_irc():
     return IRCHandle(server, port, usessl, nickname, irc_channels)
 
 
+def init_xmpp():
+    rooms = [b["xmpp"] for _, b in config['bindings'].items()]
+    server = config['xmpp']['server']
+    port = config['xmpp']['port']
+    nickname = config['xmpp']['nick']
+    jid = config['xmpp']['jid']
+    password = config['xmpp']['password']
+    return XMPPHandle(server, port, jid, password, rooms, nickname)
+
+
 def ForwardingThread(channels):
     bindings = config['bindings']
 
@@ -84,12 +95,14 @@ def main():
 
     irchandle = init_irc()
     tghandle = init_telegram()
+    xmpphandle = init_xmpp()
     tasks = []
 
     for target, args in (
             (TelegramThread, (tghandle, message_bus), ),
             (IRCThread, (irchandle, message_bus), ),
-            (ForwardingThread, ((tghandle, irchandle), ),),
+            (XMPPThread, (xmpphandle, message_bus), ),
+            (ForwardingThread, ((tghandle, irchandle, xmpphandle, ), ),),
     ):
         t = threading.Thread(target=target, args=args)
         t.setDaemon(True)
