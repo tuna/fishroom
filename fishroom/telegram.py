@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import json
-import pprint
 from socket import socket, AF_INET, SOCK_STREAM
 from collections import namedtuple
-from photostore import BasePhotoStore
+from .base import BaseBotInstance
+from .photostore import BasePhotoStore
+from .textstore import BaseTextStore
+from .models import Message, ChannelType, MessageType
+from .config import config
 
 
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('user_id', 'username', 'chat_id', 'content')
+    ('user_id', 'username', 'chat_id', 'content', 'mtype')
 )
 
 PhotoContext = namedtuple(
@@ -21,12 +24,76 @@ class InvalidMessage(Exception):
     pass
 
 
-class Telegram(object):
-    def __init__(self, ip_addr='127.0.0.1', port='4444', photo_store=None):
+class BaseNickStore(object):
+    """\
+    Save nicknames for telegram
+    """
+    def get_nickname(self, user_id, username=None):
+        pass
+
+    def set_nickname(self, user_id, nickname):
+        pass
+
+
+class RedisNickStore(BaseNickStore):
+    """\
+    Save nicknames for telegram in redis
+
+    Attributes:
+        NICKNAME_KEY: redis key
+        r: redis client
+    """
+
+    NICKNAME_KEY = config["redis"]["prefix"] + ":" + "telegram_nicks"
+
+    def __init__(self, redis_client):
+        self.r = redis_client
+
+    def get_nickname(self, user_id, username=None):
+        nick = self.r.hget(self.NICKNAME_KEY, user_id)
+        if (not nick) and username:
+            self.set_nickname(user_id, username)
+            nick = username
+        return nick or "tg-{}".format(user_id)
+
+    def set_nickname(self, user_id, nickname):
+        self.r.hset(self.NICKNAME_KEY, user_id, nickname)
+
+
+class MemNickStore(BaseNickStore):
+    """\
+    Save nicknames for telegram in memory (volatile)
+    """
+
+    def __init__(self):
+        self.usernicks = {}
+
+    def get_nickname(self, user_id, username=None):
+        nick = self.usernicks.get(user_id)
+        if (not nick) and username:
+            self.set_nickname(user_id, username)
+            nick = username
+        return nick or "tg-{}".format(user_id)
+
+    def set_nickname(self, user_id, nickname):
+        self.usernicks[user_id] = nickname
+
+
+class Telegram(BaseBotInstance):
+
+    ChanTag = ChannelType.Telegram
+
+    def __init__(self, ip_addr='127.0.0.1', port='4444',
+                 nick_store=None, photo_store=None, text_store=None):
         self._socket_init(ip_addr, port)
         self.main_session()
+        if not isinstance(nick_store, BaseNickStore):
+            raise Exception("Invalid Nickname storage")
+        self.nick_store = nick_store
         self.photo_store = photo_store \
             if isinstance(photo_store, BasePhotoStore) else None
+        self.text_store = text_store \
+            if isinstance(text_store, BaseTextStore) else None
         self.photo_context = None  # PhotoContext if not None
 
     def __del__(self):
@@ -37,18 +104,18 @@ class Telegram(object):
         s.connect((ip_addr, port))
         self.sock = s
 
-    def send_cmd(self, cmd):
+    def _send_cmd(self, cmd):
         if '\n' != cmd[-1]:
             cmd += '\n'
         self.sock.send(cmd.encode())
 
     def main_session(self):
-        self.send_cmd('main_session')
+        self._send_cmd('main_session')
 
     def send_msg(self, peer, msg):
         peer = peer.replace(' ', '_')
         cmd = 'msg ' + peer + ' ' + msg
-        self.send_cmd(cmd)
+        self._send_cmd(cmd)
 
     def send_user_msg(self, userid, msg):
         peer = 'user#' + str(userid)
@@ -59,13 +126,13 @@ class Telegram(object):
         self.send_msg(peer, msg)
 
     def download_photo(self, msg_id):
-        self.send_cmd("load_photo" + ' ' + str(msg_id))
+        self._send_cmd("load_photo" + ' ' + str(msg_id))
 
     def parse_msg(self, jmsg):
         """Parse message.
 
         Returns:
-            TeleMessage(user_id, username, chat_id, content) if jmsg is normal
+            TeleMessage(user_id, username, chat_id, content, mtype) if jmsg is normal
             None if else.
         """
         mtype = jmsg.get('event', None)
@@ -93,7 +160,7 @@ class Telegram(object):
 
             return TeleMessage(
                 user_id=user_id, username=username,
-                chat_id=chat_id, content=content)
+                chat_id=chat_id, content=content, mtype=MessageType.Text)
 
         elif mtype == "download":
             # should be `{'result': '/paht/to/image.jpg', 'type': 'download'}`
@@ -114,7 +181,8 @@ class Telegram(object):
                 user_id=ctx.user_id,
                 username=ctx.username,
                 chat_id=ctx.chat_id,
-                content="{} (photo {})".format(url, ctx.photo_id)
+                content="{} (photo {})".format(url, ctx.photo_id),
+                mtype=MessageType.Photo,
             )
 
         return None
@@ -145,42 +213,70 @@ class Telegram(object):
 
         return int(size) + 1
 
-    def recv_one_msg(self):
-        """Receive one message.
+    def message_stream(self, id_blacklist=None):
+        """Iterator of messages.
 
-        Returns:
-            -1 if connection is closed.
-            (time, chatID, userID, content) if normal.
+        Yields:
+            Fishroom Message instances
         """
+        if isinstance(id_blacklist, (list, set, tuple)):
+            id_blacklist = set(id_blacklist)
+        else:
+            id_blacklist = []
+
         while True:
             buf_size = self.recv_header()
 
             ret = self.sock.recv(buf_size)
 
             if '' == ret:
-                return -1
+                break
 
             if ret[-2:] != b"\n\n":
                 print("Error: buffer receive failed")
-                return -1
+                break
 
             try:
                 jmsg = json.loads(ret[:-2].decode("utf-8"))
             except ValueError:
                 print("Error parsing: ", ret[:-2])
-                return None
             # pprint.pprint(msg)
-            return self.parse_msg(jmsg)
+            # return self.parse_msg(jmsg)
+
+            telemsg = self.parse_msg(jmsg)
+            if telemsg is None or telemsg.user_id in id_blacklist:
+                continue
+
+            nickname = self.nick_store.get_nickname(
+                telemsg.user_id, telemsg.username)
+
+            receiver = "chat#" + str(telemsg.chat_id)
+            # if too long, post to text_store
+            if telemsg.content.count('\n') > 3:
+                text_url = self.text_store.new_paste(telemsg.content, nickname)
+                yield Message(
+                    ChannelType.Telegram,
+                    nickname, receiver, text_url + " (long text)")
+            else:
+                for content in telemsg.content.split('\n'):
+                    yield Message(
+                        ChannelType.Telegram,
+                        nickname, receiver, content, telemsg.mtype)
+
+
+def TelegramThread(tg, bus):
+    tele_me = int(config["telegram"]["me"])
+    for msg in tg.message_stream(id_blacklist=[tele_me]):
+
+        bus.publish(msg)
 
 
 if __name__ == '__main__':
-    tele = Telegram('127.0.0.1', 1235)
+    from .photostore import VimCN
+    from .textstore import Vinergy
+
+    tele = Telegram('127.0.0.1', 1235, nick_store=MemNickStore(),
+                    photo_store=VimCN(), text_store=Vinergy())
     # tele.send_msg('user#67655173', 'hello')
-    while True:
-        ret = tele.recv_one_msg()
-        if ret == -1:
-            print('Connect closed')
-            break
-        else:
-            print(ret)
-    tele = None
+    for msg in tele.message_stream():
+        print(msg.dumps())

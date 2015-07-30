@@ -1,4 +1,5 @@
 redis
+marshmallow
 tornado
 tornado-redis
 irc
