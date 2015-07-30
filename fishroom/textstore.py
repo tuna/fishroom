@@ -54,6 +54,9 @@ class Vinergy(BaseTextStore):
 
     api_url = "http://cfp.vim-cn.com/"
 
+    def __init__(self, **kwargs):
+        pass
+
     def new_paste(self, text, sender):
         data = {
             'vimcn': text,

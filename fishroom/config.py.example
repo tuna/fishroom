@@ -1,4 +1,10 @@
 config = {
+    'redis': {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "prefix": "fishroom",
+    },
+
     'irc': {
         'server': 'irc.freenode.net',
         'port': 6697,
@@ -12,7 +18,15 @@ config = {
     'telegram': {
         'server': '127.0.0.1',
         'port': 1235,
-        'me': 'user#107279837',
+        'me': 107279837,
+    },
+
+    'xmpp': {
+        'server': 'xmpp.jp',
+        'port': 5222,
+        'jid': 'user@xmpp.jp/resource',
+        'password': '',
+        'nick': 'XiaoT',
     },
 
     'photo_store': {
@@ -23,10 +37,17 @@ config = {
         }
     },
 
+    'text_store': {
+        'provider': 'vinergy',
+        'options': {
+        },
+    },
+
     'bindings': {
         "archlinux-cn": {
             "irc": '#archlinux-cn',
             "telegram": 'chat#12889958',
+            "xmpp": 'chat@conference.xmpp.jp'
         }
     }
 }
