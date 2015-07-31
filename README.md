@@ -7,7 +7,7 @@ TUNA needs a chatroom, while each IM protocol/software has its own implementatio
 Unlike email and mailing list, instant messaging is fragmented and everybody has different preferred software.
 As a result, TUNA as a group of people, was splitted into IRC users, wechat users, telegram users, XMPP users, etc.
 
-To reunionify TUNA, we create this project to synchronize messages among each IM client, so that people can enjoying
+To reunify TUNA, we created this project to synchronize messages between IM clients, so that people can enjoy a
 big party again.
 
 ## Supported IMs
