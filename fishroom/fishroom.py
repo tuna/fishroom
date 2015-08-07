@@ -6,7 +6,7 @@ import threading
 from .bus import MessageBus
 from .chatlogger import ChatLogger
 from .photostore import Imgur, VimCN
-from .textstore import Pastebin, Vinergy
+from .textstore import Pastebin, Vinergy, RedisStore
 from .telegram import RedisNickStore, Telegram, TelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
@@ -27,6 +27,8 @@ def init_text_store():
         return Pastebin(**options)
     elif provider == "vinergy":
         return Vinergy()
+    elif provider == "redis":
+        return RedisStore(redis_client)
 
 
 def init_telegram():

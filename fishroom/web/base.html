@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>{{title}}</title>
+	<link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	{% block css %}
+	{% end %}
+</head>
+<body>
+	<div class="container">
+	{% block content %}
+	{% end %}
+	</div>
+	<script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	{% block js %}
+	{% end %}
+</body>
+</html>
+
+<!--
+vim: ts=2 sts=2 sw=2 noexpandtab
+-->

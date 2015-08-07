@@ -2,7 +2,11 @@
 # -*- coding:utf-8 -*-
 import requests
 import requests.exceptions
+import hashlib
+import json
+import pytz
 from datetime import datetime
+from .config import config
 
 
 class BaseTextStore(object):
@@ -72,5 +76,28 @@ class Vinergy(BaseTextStore):
 
         return None
 
+
+class RedisStore(BaseTextStore):
+
+    KEY_TMPL = ":".join([config["redis"]["prefix"], "text_store", "{id}"])
+    URL_TMPL = config["baseurl"] + "/text/{id}"
+
+    def __init__(self, redis_client, tz="utc", **kwargs):
+        self.r = redis_client
+        self.tz = pytz.timezone(tz)
+
+    def new_paste(self, text, sender):
+        now = datetime.now(tz=self.tz).strftime("%Y-%m-%d %H:%M:%S")
+        s = hashlib.sha1()
+        s.update((text+sender+now).encode("utf-8"))
+        _id = s.hexdigest()[:16]
+        key = self.KEY_TMPL.format(id=_id)
+        value = json.dumps({
+            "title": "Text from {}".format(sender),
+            "time": now,
+            "content": text,
+        })
+        self.r.set(key, value)
+        return self.URL_TMPL.format(id=_id)
 
 # vim: ts=4 sw=4 sts=4 expandtab
