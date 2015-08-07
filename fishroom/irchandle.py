@@ -53,7 +53,7 @@ class IRCHandle(BaseBotInstance):
 
     def on_pong(self, conn, event):
         conn.last_pong = time.time()
-        print('[irc]  PONG from: ', event.source)
+        # print('[irc]  PONG from: ', event.source)
 
     def on_welcome(self, conn, event):
         for c in self.channels:

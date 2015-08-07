@@ -40,8 +40,8 @@ class Message(object):
         self.channel = channel
         self.sender = sender
         self.receiver = receiver
-        self.mtype = mtype
         self.content = content
+        self.mtype = mtype
 
     def __repr__(self):
         return "[{channel}] from: {sender}, to: {receiver}, {content}".format(

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 from socket import socket, AF_INET, SOCK_STREAM
 from collections import namedtuple
 from .base import BaseBotInstance
@@ -92,9 +93,9 @@ class Telegram(BaseBotInstance):
         self.nick_store = nick_store
         self.photo_store = photo_store \
             if isinstance(photo_store, BasePhotoStore) else None
+        self.photo_context = None  # PhotoContext if not None
         self.text_store = text_store \
             if isinstance(text_store, BaseTextStore) else None
-        self.photo_context = None  # PhotoContext if not None
 
     def __del__(self):
         self.sock.close()
@@ -278,17 +279,26 @@ class Telegram(BaseBotInstance):
                 telemsg.user_id, telemsg.username)
 
             receiver = "chat#" + str(telemsg.chat_id)
-            # if too long, post to text_store
-            if telemsg.content.count('\n') > 3:
-                text_url = self.text_store.new_paste(telemsg.content, nickname)
+
+            if not self.text_store:
                 yield Message(
                     ChannelType.Telegram,
-                    nickname, receiver, text_url + " (long text)")
+                    nickname, receiver, telemsg.content, telemsg.mtype)
             else:
-                for content in telemsg.content.split('\n'):
+                # if too long, post to text_store
+                if telemsg.content.count('\n') > 3:
+                    text_url = self.text_store.new_paste(
+                        telemsg.content, nickname)
                     yield Message(
                         ChannelType.Telegram,
-                        nickname, receiver, content, telemsg.mtype)
+                        nickname, receiver, text_url + " (long text)")
+                else:
+                    for content in telemsg.content.split('\n'):
+                        if re.match(r'^\s*$', content):
+                            continue
+                        yield Message(
+                            ChannelType.Telegram,
+                            nickname, receiver, content, telemsg.mtype)
 
 
 def TelegramThread(tg, bus):
