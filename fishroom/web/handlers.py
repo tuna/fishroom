@@ -74,6 +74,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
             wsbaseurl = "wss://" + p.netloc + p.path
 
         embedded = self.get_argument("embedded", None)
+        limit = self.get_argument("limit", 15)
 
         self.render(
             "chat_log.html",
@@ -84,6 +85,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
             channel=channel,
             wsbaseurl=wsbaseurl,
             embedded=(embedded is not None),
+            limit=int(limit),
         )
 
         # key =
