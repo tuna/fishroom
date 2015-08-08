@@ -66,7 +66,15 @@ $(document).ready(function() {
 	}();
 
 	var convert = function(content){
-		return emojione.toImage(content.replace(/(?:\r\n|\r|\n)/g, '<br />'));
+		var urlify = function(text) {
+			var urlRegex = /(https?:\/\/[^\s]+)/g;
+			return text.replace(urlRegex, '<a href="$1">$1</a>')
+		}
+		return emojione.toImage(
+				urlify(
+					content.replace(/(?:\r\n|\r|\n)/g, '<br />')
+				)
+			);
 	};
 
 	var new_message = function() {
