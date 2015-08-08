@@ -88,7 +88,10 @@ class IRCHandle(BaseBotInstance):
         conn.nick(conn.get_nickname() + "_")
 
     def send_msg(self, target, msg):
-        self.irc_conn.privmsg(target, msg)
+        try:
+            self.irc_conn.privmsg(target, msg)
+        except irc.client.ServerNotConnectedError:
+            print("[irc] Server not connected")
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
