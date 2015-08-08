@@ -2,6 +2,7 @@
 import sleekxmpp
 from .base import BaseBotInstance
 from .models import Message, ChannelType
+from .helpers import get_now_date_time
 
 
 class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
@@ -31,8 +32,11 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
 
     def on_muc_message(self, msg):
         if msg['mucnick'] != self.nick and msg['id']:
-            msg = Message(ChannelType.XMPP,
-                          msg['mucnick'], msg['from'].bare, msg['body'])
+            date, time = get_now_date_time()
+            msg = Message(
+                ChannelType.XMPP,
+                msg['mucnick'], msg['from'].bare, msg['body'],
+                date=date, time=time)
             self.send_to_bus(self, msg)
 
     def send_msg(self, target, content):

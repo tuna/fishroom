@@ -36,12 +36,14 @@ class Message(object):
     _schema = None
 
     def __init__(self, channel, sender, receiver, content,
-                 mtype=MessageType.Text):
+                 mtype=MessageType.Text, date=None, time=None):
         self.channel = channel
         self.sender = sender
         self.receiver = receiver
         self.content = content
         self.mtype = mtype
+        self.date = date
+        self.time = time
 
     def __repr__(self):
         return "[{channel}] from: {sender}, to: {receiver}, {content}".format(
@@ -70,6 +72,8 @@ class MessageSchema(Schema):
         (MessageType.Photo, MessageType.Text, MessageType.Sticker, ),
     )
     content = fields.String()
+    date = fields.String()
+    time = fields.String()
 
     def make_object(self, kwargs):
         return Message(**kwargs)

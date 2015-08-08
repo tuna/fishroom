@@ -6,7 +6,7 @@ import threading
 from .bus import MessageBus
 from .chatlogger import ChatLogger
 from .photostore import Imgur, VimCN
-from .textstore import Pastebin, Vinergy, RedisStore
+from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
 from .telegram import RedisNickStore, Telegram, TelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
@@ -17,7 +17,7 @@ from .config import config
 redis_client = redis.StrictRedis(
     host=config['redis']['host'], port=config['redis']['port'])
 message_bus = MessageBus(redis_client)
-chat_logger = ChatLogger(redis_client, tz=config.get("timezone", "utc"))
+chat_logger = ChatLogger(redis_client)
 
 
 def init_text_store():
@@ -29,6 +29,8 @@ def init_text_store():
         return Vinergy()
     elif provider == "redis":
         return RedisStore(redis_client)
+    elif provider == "chat_logger":
+        return ChatLoggerStore()
 
 
 def init_telegram():
@@ -83,29 +85,34 @@ def ForwardingThread(channels, text_store):
 
     for msg in message_bus.message_stream():
         c, b = get_binding(msg)
-        print(msg, c)
+        print(msg, c, len(msg.content.encode('utf-8')))
         if b is None:
             continue
 
-        chat_logger.log(c, msg)
-
-        if msg.content.count('\n') > 3:
+        msg_id = chat_logger.log(c, msg)
+        if (msg.content.count('\n') > 5
+                or len(msg.content.encode('utf-8')) >= 400):
             text_url = text_store.new_paste(
-                msg.content, msg.sender)
+                msg.content, msg.sender,
+                channel=c, date=msg.date, time=msg.time, msg_id=msg_id
+            )
+
             if text_url is None:
                 # Fail
                 print("Failed to publish text")
                 continue
             # messages = msg
             contents = [text_url + " (long text)", ]
+            send_back = True
         else:
             contents = [
                 line for line in msg.content.split("\n")
                 if not re.match(r'^\s*$', line)
             ]
+            send_back = False
 
         for c in channels:
-            if c.ChanTag == msg.channel:
+            if (not send_back) and c.ChanTag == msg.channel:
                 continue
             target = b[c.ChanTag.lower()]
             for line in contents:

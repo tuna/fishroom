@@ -7,12 +7,13 @@ from .base import BaseBotInstance
 from .photostore import BasePhotoStore
 from .textstore import BaseTextStore
 from .models import Message, ChannelType, MessageType
+from .helpers import timestamp_date_time, get_now_date_time
 from .config import config
 
 
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('user_id', 'username', 'chat_id', 'content', 'mtype')
+    ('user_id', 'username', 'chat_id', 'content', 'mtype', 'ts')
 )
 
 PhotoContext = namedtuple(
@@ -137,6 +138,7 @@ class Telegram(BaseBotInstance):
             None if else.
         """
         mtype = jmsg.get('event', None)
+        ts = jmsg.get('date', None)
 
         if mtype == "message":
             from_info = jmsg["from"]
@@ -161,7 +163,9 @@ class Telegram(BaseBotInstance):
 
             return TeleMessage(
                 user_id=user_id, username=username,
-                chat_id=chat_id, content=content, mtype=MessageType.Text)
+                chat_id=chat_id, content=content,
+                mtype=MessageType.Text, ts=ts,
+            )
 
         elif mtype == "download":
             # should be `{'result': '/paht/to/image.jpg', 'type': 'download'}`
@@ -184,6 +188,7 @@ class Telegram(BaseBotInstance):
                 chat_id=ctx.chat_id,
                 content="{} (photo {})".format(url, ctx.photo_id),
                 mtype=MessageType.Photo,
+                ts=ts,
             )
 
         return None
@@ -280,10 +285,15 @@ class Telegram(BaseBotInstance):
 
             receiver = "chat#" + str(telemsg.chat_id)
 
+            date, time = timestamp_date_time(telemsg.ts) \
+                if telemsg.ts else get_now_date_time()
+
             if not self.text_store:
                 yield Message(
                     ChannelType.Telegram,
-                    nickname, receiver, telemsg.content, telemsg.mtype)
+                    nickname, receiver, telemsg.content, telemsg.mtype,
+                    date=date, time=time,
+                )
             else:
                 # if too long, post to text_store
                 if telemsg.content.count('\n') > 3:
@@ -291,14 +301,18 @@ class Telegram(BaseBotInstance):
                         telemsg.content, nickname)
                     yield Message(
                         ChannelType.Telegram,
-                        nickname, receiver, text_url + " (long text)")
+                        nickname, receiver, text_url + " (long text)",
+                        date=date, time=time,
+                    )
                 else:
                     for content in telemsg.content.split('\n'):
                         if re.match(r'^\s*$', content):
                             continue
                         yield Message(
                             ChannelType.Telegram,
-                            nickname, receiver, content, telemsg.mtype)
+                            nickname, receiver, content, telemsg.mtype,
+                            date=date, time=time,
+                        )
 
 
 def TelegramThread(tg, bus):

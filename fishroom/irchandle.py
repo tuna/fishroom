@@ -5,6 +5,7 @@ import irc
 import irc.client
 from .base import BaseBotInstance
 from .models import Message, ChannelType
+from .helpers import get_now_date_time
 from .config import config
 
 
@@ -70,7 +71,11 @@ class IRCHandle(BaseBotInstance):
         if irc_nick in self.blacklist:
             return
         content = event.arguments[0]
-        msg = Message(ChannelType.IRC, irc_nick, event.target, content)
+        date, time = get_now_date_time()
+        msg = Message(
+            ChannelType.IRC, irc_nick, event.target, content,
+            date=date, time=time
+        )
         self.send_to_bus(self, msg)
 
     def on_pubmsg(self, conn, event):

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row">
+	<div class="col-md-12">
+		{% if not embedded %} <h3>{{title}}</h3> {% end %}
+		<ul id="logs">
+			{% for id, msg in enumerate(msgs) %}
+			<li class="row" data-id="{{id}}">
+				<span class="time col-md-1">{{msg.time}}</span>
+				<span class="nickname col-md-1">{{msg.sender}}</span>
+				<span class="content col-md-10">{{msg.content}}</span></li>
+			{% end %}
+		</ul>
+	</div>
+</div>
+
+{% end %}
+
+{% block js %}
+<script src="//cdn.bootcss.com/blueimp-md5/1.1.1/js/md5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+	var getColor = function() {
+		var cache = {};
+		function getColor_(str) {
+			if (cache[str]) {
+				return cache[str];
+			}
+
+			if (typeof md5 !== "undefined") {
+				var frag = parseInt(md5(str.charAt(0)=='ⓢ'? str.substr(2):str).substring(0,6), 16);
+			} else {
+				var frag = Math.floor(Math.random() * 0xffffff);
+				console.log('missing md5 support, using random color now!')
+			}
+
+			var h = Math.floor((frag & 0xff0000 >> 16) / 255 * 360);
+			var s = Math.floor((frag & 0xff00 >> 8) / 255 * 60 + 20);
+			var l = Math.floor((frag & 0xff) / 255 * 20 + 50);
+
+			//convert color with jQuery
+			var colorCode = $('<span></span>').css("color", "hsl(" + h + "," + s + "%," + l +"%)").css("color");
+
+			cache[str] = colorCode;
+			return colorCode;
+		}
+		return getColor_;
+	}();
+
+	var convert = function(content){
+		return emojione.toImage(content.replace(/(?:\r\n|\r|\n)/g, '<br />'));
+	};
+
+	var new_message = function() {
+		var next_id = {{next_id}};
+		function _new_message(msg) {
+			$("ul#logs").append(
+					'<li class="row" data-id="' + next_id + '">' + 
+					'<span class="time col-md-1">' + msg.time + '</span>'	+
+					'<span class="nickname col-md-1" style="color: '+ getColor(msg.sender) +';">' + msg.sender + '</span>' +
+					'<span class="content col-md-10">' + convert(msg.content) + '</span>' +
+					'</li>'
+					);
+			next_id++;
+		}
+		return _new_message;
+	}();
+
+	window.CreateWebSocket = function() {
+		var ws = new WebSocket("{{wsbaseurl}}/msg_stream");
+		ws.onopen = function() {
+			ws.send('{"channel": "{{channel}}"}');
+		};
+		ws.onmessage = function(ev) {
+			if (ev.data == "OK") {
+				console.log("OK");
+			} else {
+				var msg = JSON.parse(ev.data);
+				// console.log(msg);
+				new_message(msg);
+				window.scrollTo(0,document.body.scrollHeight);
+			}
+		};
+		ws.onclose = function(ev) {
+			console.log("socket closed, try reconnecting");
+			setTimeout(function(){
+				CreateWebSocket();
+			}, 5*1000);
+		};
+	};
+
+	CreateWebSocket();
+
+	$("#logs > li").each(function(i, e){
+		var nick = $(e).children(".nickname");
+		nick.css("color", getColor(nick.text()));
+		var content = $(e).children(".content");
+		content.html(convert(content.text()));
+	});
+
+});
+</script>
+{% end %}
+
+{% block css %}
+<style>
+ul#logs {
+	list-style-type: none;
+	font-family: monospace;
+	padding-left: 0;
+	padding-top: 10px;
+}
+ul#logs > li {
+	padding: 5px 10px;
+	line-height: 1.33;
+	border-top: 1px solid #EEE;
+}
+ul#logs > li > span.time {
+	color: #888;
+}
+ul#logs > li > span.content {
+	font-family: "Fira Sans OT","XinGothic-Citicpress","XinGothic Citicpress","Lantinghei TC","Hiragino Kaku Gothic Pro","Apple LiGothic","Heiti TC","LiHei Pro","Source Han Sans CN","WenQuanYi Micro Hei","Microsoft YaHei","微軟正黑體","文泉驿正黑",sans-serif;
+	min-height: 20px;	
+}
+
+</style>
+
+{% end %}
+{#
+vim: ts=2 sts=2 sw=2 noexpandtab
+#}

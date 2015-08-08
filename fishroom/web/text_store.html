@@ -11,6 +11,17 @@
 </div>
 
 {% end %}
-<!--
+
+{% block js %}
+<script>
+$(document).ready(function() {
+	$("pre").html(
+			emojione.toImage($("pre").text())
+	);
+});
+</script>
+{% end %}
+
+{#
 vim: ts=2 sts=2 sw=2 noexpandtab
--->
+#}
