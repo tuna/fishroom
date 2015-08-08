@@ -7,7 +7,6 @@ import tornadoredis
 from urllib.parse import urlparse
 from ..helpers import get_now
 from ..models import Message
-from ..textstore import RedisStore
 from ..chatlogger import ChatLogger
 from ..config import config
 
@@ -19,6 +18,15 @@ def get_redis():
     return r
 
 r = get_redis()
+
+
+class DefaultHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        url = "/log/{channel}/today".format(
+            channel=config["chatlog"]["default_channel"]
+        )
+        self.redirect(url)
 
 
 class TextStoreHandler(tornado.web.RequestHandler):
