@@ -92,6 +92,8 @@ class IRCHandle(BaseBotInstance):
             self.irc_conn.privmsg(target, msg)
         except irc.client.ServerNotConnectedError:
             print("[irc] Server not connected")
+            self.irc_conn.reconnect()
+        time.sleep(0.5)
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
