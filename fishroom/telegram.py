@@ -231,7 +231,7 @@ class Telegram(BaseBotInstance):
             self.send_msg(target, "Invalid Command")
             return
 
-        if cmd == "nick":
+        if cmd == "nick" and len(args) == 1:
             nick = args[0]
             self.nick_store.set_nickname(user_id, nick)
             self.send_msg(target, "Changed nickname to '%s'" % nick)
