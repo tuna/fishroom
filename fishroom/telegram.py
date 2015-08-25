@@ -176,11 +176,18 @@ class Telegram(BaseBotInstance):
                 return None
 
             url = self.photo_store.upload_image(filename)
-            if url is None:
-                return None
-
             ctx = self.photo_context
             self.photo_context = None
+
+            if url is None:
+                return TeleMessage(
+                    user_id="__xiao_t__",
+                    username="username",
+                    chat_id=ctx.chat_id,
+                    content="Error: Fail to upload photo",
+                    mtype=MessageType.Text,
+                    ts=ts,
+                )
 
             return TeleMessage(
                 user_id=ctx.user_id,

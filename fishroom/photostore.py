@@ -36,6 +36,10 @@ class Imgur(BasePhotoStore):
         except requests.exceptions.Timeout:
             print("Error: Timeout uploading to Imgur")
             return None
+        except:
+            import traceback
+            traceback.print_exc()
+            return None
 
         ret = json.loads(r.text)
         if ret.get('status', None) != 200 or ret.get('success', False) != True:
@@ -58,6 +62,10 @@ class VimCN(BasePhotoStore):
             r = requests.post(self.url, files=files, timeout=5)
         except requests.exceptions.Timeout:
             print("Error: Timeout uploading to VimCN")
+            return None
+        except:
+            import traceback
+            traceback.print_exc()
             return None
         if not r.ok:
             return None
