@@ -16,9 +16,7 @@ config = {
     },
 
     'telegram': {
-        'server': '127.0.0.1',
-        'port': 1235,
-        'me': 107279837,
+        'token': '',  # get this from @BotFather
     },
 
     'xmpp': {

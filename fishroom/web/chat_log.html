@@ -10,10 +10,10 @@
 			{% if not embedded or id > next_id-limit-1 %}	
 			<li class="row" data-id="{{id}}">
 				<span class="time col-md-1">{{msg.time}}</span>
-				<span class="nickname col-md-1">{{msg.sender}}</span>
-				<span class="col-md-10">
-					<span class="content">{{msg.content}}</span>
-					{% if msg.mtype == "photo" %}
+				<span class="nickname col-md-2">{{msg.sender}}</span>
+				<span class="col-md-9">
+					<span class="content">{{escape(msg.content)}}</span>
+					{% if msg.mtype in ("photo", "sticker") %}
 					<img class="thumbnail" src="{{msg.content.split()[0]}}" />
 					{% end %}
 				</span>
@@ -74,7 +74,10 @@ $(document).ready(function() {
 		}
 		return emojione.toImage(
 				urlify(
-					content.replace(/(?:\r\n|\r|\n)/g, '<br />')
+					content
+					.replace(/(?:\r\n|\r|\n)/g, '<br />')
+					.replace(/</, '&lt')
+					.replace(/>/, '&gt')
 				)
 			);
 	};
@@ -82,7 +85,7 @@ $(document).ready(function() {
 	var new_message = function() {
 		var next_id = {{next_id}};
 		var _thumb = function(msg) {
-			if (msg.mtype == "photo") {
+			if (msg.mtype == "photo" || msg.mtype == "sticker") {
 				return '<img class="thumbnail" src="' + msg.content.split(" ")[0] + '">'
 			}
 			return "";
@@ -91,8 +94,8 @@ $(document).ready(function() {
 			$("ul#logs").append(
 					'<li class="row" data-id="' + next_id + '">' + 
 					'<span class="time col-md-1">' + msg.time + '</span>'	+
-					'<span class="nickname col-md-1" style="color: '+ getColor(msg.sender) +';">' + msg.sender + '</span>' +
-					'<span class="col-md-10">' + 
+					'<span class="nickname col-md-2" style="color: '+ getColor(msg.sender) +';">' + msg.sender + '</span>' +
+					'<span class="col-md-9">' + 
 						'<span class="content ">' + convert(msg.content) + '</span>' + _thumb(msg) +
 					'</span>' +
 					'</li>'

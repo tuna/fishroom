@@ -7,7 +7,8 @@ from .bus import MessageBus
 from .chatlogger import ChatLogger
 from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
-from .telegram import RedisNickStore, Telegram, TelegramThread
+from .telegram import (RedisNickStore, RedisStickerURLStore,
+                       Telegram, TelegramThread)
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
 
@@ -44,11 +45,14 @@ def init_telegram():
             return VimCN()
 
     nick_store = RedisNickStore(redis_client)
+    sticker_url_store = RedisStickerURLStore(redis_client)
     photo_store = photo_store_init()
 
     return Telegram(
-        config["telegram"]["server"], config["telegram"]["port"],
-        nick_store, photo_store
+        config["telegram"]["token"],
+        sticker_url_store=sticker_url_store,
+        nick_store=nick_store,
+        photo_store=photo_store,
     )
 
 

@@ -6,3 +6,4 @@ tornado-redis
 irc
 requests
 sleekxmpp
+pillow

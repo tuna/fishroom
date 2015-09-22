@@ -135,6 +135,8 @@ class Telegram(BaseBotInstance):
             return r
         except requests.exceptions.Timeout:
             print("Error: Timeout uploading to Telegram")
+        except KeyboardInterrupt:
+            raise
         except:
             import traceback
             traceback.print_exc()
@@ -186,6 +188,7 @@ class Telegram(BaseBotInstance):
 
         if "text" in jmsg:
             content = jmsg["text"]
+            mtype = MessageType.Text
 
         elif "photo" in jmsg:
             file_id = jmsg["photo"][-1]["file_id"]
@@ -195,6 +198,7 @@ class Telegram(BaseBotInstance):
                 content = url + " (photo)"
             else:
                 content = "(teleboto Faild to download file)"
+            mtype = MessageType.Photo
 
         elif "sticker" in jmsg:
             file_id = jmsg["sticker"]["file_id"]
@@ -207,19 +211,27 @@ class Telegram(BaseBotInstance):
                 else:
                     url = "(teleboto Faild to download file)"
             content = url + " (sticker)"
+            mtype = MessageType.Sticker
 
         elif "new_chat_title" in jmsg:
             content = "{} {} changed group name to {}".format(
                 from_info["first_name"], from_info["last_name"],
                 jmsg["new_chat_title"],
             )
+            mtype = MessageType.Text
         else:
             content = "(unsupported message type)"
+            mtype = MessageType.Text
+
+        if "forward_from" in jmsg:
+            ffrom = jmsg["forward_from"]
+            content = content + " <forwarded from {} {}>".format(
+                ffrom["first_name"], ffrom["last_name"])
 
         return TeleMessage(
             user_id=user_id, username=username,
             chat_id=chat_id, content=content,
-            mtype=MessageType.Text, ts=ts,
+            mtype=mtype, ts=ts,
         )
 
     def message_stream(self, id_blacklist=None):
