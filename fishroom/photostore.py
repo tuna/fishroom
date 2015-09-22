@@ -18,9 +18,12 @@ class Imgur(BasePhotoStore):
     def __init__(self, client_id, **kwargs):
         self.client_id = client_id
 
-    def upload_image(self, filename):
-        with open(filename, 'rb') as f:
-            b64img = b64encode(f.read())
+    def upload_image(self, filename=None, filedata=None):
+        if filedata is None:
+            with open(filename, 'rb') as f:
+                b64img = b64encode(f.read())
+        else:
+            b64img = b64encode(filedata)
 
         headers = {"Authorization": "Client-ID %s" % self.client_id}
         try:
@@ -56,8 +59,12 @@ class VimCN(BasePhotoStore):
     def __init__(self, **kwargs):
         pass
 
-    def upload_image(self, filename):
-        files = {"image": open(filename, 'rb')}
+    def upload_image(self, filename=None, filedata=None):
+        if filedata is None:
+            files = {"image": open(filename, 'rb')}
+        else:
+            files = {"image": filedata}
+
         try:
             r = requests.post(self.url, files=files, timeout=5)
         except requests.exceptions.Timeout:
