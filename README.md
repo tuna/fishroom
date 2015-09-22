@@ -18,9 +18,16 @@ big party again.
 - Tox
 - Wechat (maybe)
 
+## TODO
+
+- [x] Implement Telegram protocol using Telegram Bot API
+- [ ] Plugin system
+- [ ] Chat with Bots
+
 ## Related Projects
 
 - [Telegram2IRC](https://github.com/tuna/telegram2irc)
+- [Telegram Bot API](https://core.telegram.org/bots/api)
 - [IRCBindXMPP](https://github.com/lilydjwg/ircbindxmpp)
 - [SleekXMPP](https://pypi.python.org/pypi/sleekxmpp)
 	- Multi-User Chat Supported (http://sleekxmpp.com/getting_started/muc.html)
