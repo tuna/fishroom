@@ -4,7 +4,7 @@ import redis
 import threading
 
 from .bus import MessageBus
-from .models import MessageType
+from .models import MessageType, Message
 from .chatlogger import ChatLogger
 from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
@@ -103,7 +103,27 @@ def ForwardingThread(channels, text_store):
         if b is None:
             continue
 
+        # Handle commands
+        bot_reply = ""
+        if msg.mtype == MessageType.Command:
+            try:
+                cmd, args = parse_command(msg.content)
+                handler = get_command_handler(cmd)
+                if handler is not None:
+                    bot_reply = handler(cmd, *args, msg=msg)
+            except:
+                msg.mtype = MessageType.Text
+                pass
+
         msg_id = chat_logger.log(c, msg)
+        if bot_reply:
+            chat_logger.log(
+                c,
+                Message(
+                    msg.channel, config.get("name", "bot"), msg.receiver,
+                    content=bot_reply, date=msg.date, time=msg.time,
+                )
+            )
 
         # Event Message
         if msg.mtype == MessageType.Event:
@@ -111,18 +131,6 @@ def ForwardingThread(channels, text_store):
                 target = b[c.ChanTag.lower()]
                 c.send_msg(target, ev_tmpl.format(content=msg.content))
             continue
-
-        # Handle commands
-        bot_reply = ""
-        if msg.mtype == MessageType.Command:
-            try:
-                cmd, args = parse_command(msg.content)
-            except:
-                continue
-            handler = get_command_handler(cmd)
-            if handler is None:
-                continue
-            bot_reply = handler(cmd, *args, msg=msg)
 
         # Other Message
         if (msg.content.count('\n') > 5

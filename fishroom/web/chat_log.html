@@ -14,7 +14,7 @@
 				<span class="col-md-9">
 					<span class="content">{{escape(msg.content)}}</span>
 					{% if msg.mtype in ("photo", "sticker") %}
-					<img class="thumbnail" src="{{msg.content.split()[0]}}" />
+					<img class="thumbnail" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
 					{% end %}
 				</span>
 			</li>
@@ -86,7 +86,7 @@ $(document).ready(function() {
 		var next_id = {{next_id}};
 		var _thumb = function(msg) {
 			if (msg.mtype == "photo" || msg.mtype == "sticker") {
-				return '<img class="thumbnail" src="' + msg.content.split(" ")[0] + '">'
+				return '<img class="thumbnail" src="' + msg.media_url + '">'
 			}
 			return "";
 		};

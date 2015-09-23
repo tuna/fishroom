@@ -4,6 +4,8 @@ import shlex
 
 command_handlers = {}
 
+LEADING_CHARS = ('/', '.')
+
 
 def register_command(cmd, func):
     if cmd in command_handlers:
@@ -28,7 +30,7 @@ def parse_command(content):
     if len(tokens) < 1:
         raise InvalidCommand()
     cmd = tokens.pop(0)
-    assert cmd[0] == "/" and len(cmd) > 2
+    assert cmd[0] in LEADING_CHARS and len(cmd) > 2
     args = tokens
     return cmd[1:], args
 

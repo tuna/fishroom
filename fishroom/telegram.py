@@ -13,7 +13,7 @@ from .config import config
 
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('user_id', 'username', 'chat_id', 'content', 'mtype', 'ts')
+    ('user_id', 'username', 'chat_id', 'content', 'mtype', 'ts', 'media_url')
 )
 
 
@@ -185,6 +185,7 @@ class Telegram(BaseBotInstance):
         user_id, username = from_info["id"], from_info.get("username", "")
         chat_id = jmsg["chat"]["id"]
         ts = jmsg["date"]
+        media_url = ""
 
         if "text" in jmsg:
             content = jmsg["text"]
@@ -198,6 +199,7 @@ class Telegram(BaseBotInstance):
             if photo is not None:
                 url = self.photo_store.upload_image(filedata=photo)
                 content = url + " (photo)"
+                media_url = url
             else:
                 content = "(teleboto Faild to download file)"
             mtype = MessageType.Photo
@@ -210,8 +212,12 @@ class Telegram(BaseBotInstance):
                 if sticker is not None:
                     photo = webp2png(sticker)
                     url = self.photo_store.upload_image(filedata=photo)
+                    media_url = url
                 else:
                     url = "(teleboto Faild to download file)"
+            else:
+                media_url = url
+
             content = url + " (sticker)"
             mtype = MessageType.Sticker
 
@@ -233,7 +239,7 @@ class Telegram(BaseBotInstance):
         return TeleMessage(
             user_id=user_id, username=username,
             chat_id=chat_id, content=content,
-            mtype=mtype, ts=ts,
+            mtype=mtype, ts=ts, media_url=media_url
         )
 
     def message_stream(self, id_blacklist=None):
@@ -295,7 +301,7 @@ class Telegram(BaseBotInstance):
                 yield Message(
                     ChannelType.Telegram,
                     nickname, receiver, telemsg.content, telemsg.mtype,
-                    date=date, time=time,
+                    date=date, time=time, media_url=telemsg.media_url,
                 )
 
     def try_set_nick(self, msg):

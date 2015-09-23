@@ -38,7 +38,7 @@ class Message(object):
     _schema = None
 
     def __init__(self, channel, sender, receiver, content,
-                 mtype=MessageType.Text, date=None, time=None):
+                 mtype=MessageType.Text, date=None, time=None, media_url=None):
         self.channel = channel
         self.sender = sender
         self.receiver = receiver
@@ -46,6 +46,7 @@ class Message(object):
         self.mtype = mtype
         self.date = date
         self.time = time
+        self.media_url = media_url
 
     def __repr__(self):
         return (
@@ -76,6 +77,7 @@ class MessageSchema(Schema):
         (MessageType.Photo, MessageType.Text, MessageType.Sticker,
          MessageType.Command, MessageType.Event),
     )
+    media_url = fields.String()
     content = fields.String()
     date = fields.String()
     time = fields.String()
