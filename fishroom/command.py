@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 import shlex
-
-command_handlers = {}
+from collections import namedtuple
 
 LEADING_CHARS = ('/', '.')
 
+CmdHandler = namedtuple(
+    'CmdHandler',
+    ('func', 'desc', 'usage')
+)
 
-def register_command(cmd, func):
+command_handlers = {}
+
+
+def register_command(cmd, func, **options):
     if cmd in command_handlers:
         raise Exception("Command '%s' already registed" % cmd)
     print("[Fishroom] command `%s` registerred" % cmd)
-    command_handlers[cmd] = func
+    command_handlers[cmd] = CmdHandler(
+        func, options.get("desc", ""), options.get("usage", ""))
 
 
-def command(*cmds, **options):
+def command(cmd, **options):
     def wrapper(func):
-        for cmd in cmds:
-            register_command(cmd, func)
+        register_command(cmd, func, **options)
     return wrapper
 
 
@@ -37,6 +43,21 @@ def parse_command(content):
 
 def get_command_handler(cmd):
     return command_handlers.get(cmd, None)
+
+
+@command("help", desc="list commands or usage", usage="help [cmd]")
+def list_commands(cmd, *args, **kwargs):
+    if len(args) == 0:
+        return "\n".join([
+            "{}: {}".format(c, h.desc)
+            for c, h in command_handlers.items()
+        ])
+
+    if len(args) == 1:
+        h = get_command_handler(args[0])
+        if h is None:
+            return
+        return "{}: {}\nUsage: {}".format(args[0], h.desc, h.usage)
 
 
 if __name__ == "__main__":

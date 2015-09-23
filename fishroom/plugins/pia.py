@@ -4,7 +4,7 @@ from __future__ import print_function, division, unicode_literals
 from ..command import command
 
 
-@command("pia")
+@command("pia", desc="Pia somebody", usage="pia [name]")
 def pia(cmd, *args, **kwargs):
     if len(args) == 0:
         # pia the bot

@@ -5,6 +5,7 @@ from .command import LEADING_CHARS
 class BaseBotInstance(object):
 
     ChanTag = None
+    SupportMultiline = False
 
     def send_msg(self, target, content):
         pass

@@ -95,9 +95,10 @@ def ForwardingThread(channels, text_store):
         return (None, None)
 
     msg_tmpl = "[{sender}] {content}"
-    ev_tmpl = "{content}"
+    bot_msg_tmpl = "{content}"
 
     for msg in message_bus.message_stream():
+        send_back = False
         c, b = get_binding(msg)
         print(msg, c, len(msg.content.encode('utf-8')))
         if b is None:
@@ -108,31 +109,31 @@ def ForwardingThread(channels, text_store):
         if msg.mtype == MessageType.Command:
             try:
                 cmd, args = parse_command(msg.content)
-                handler = get_command_handler(cmd)
+                handler = get_command_handler(cmd).func
                 if handler is not None:
                     bot_reply = handler(cmd, *args, msg=msg)
             except:
                 msg.mtype = MessageType.Text
-                pass
+
+        if bot_reply:
+            bot_msg = Message(
+                msg.channel, config.get("name", "bot"), msg.receiver,
+                content=bot_reply, date=msg.date, time=msg.time, botmsg=True
+            )
+            message_bus.publish(bot_msg)
 
         msg_id = chat_logger.log(c, msg)
-        if bot_reply:
-            chat_logger.log(
-                c,
-                Message(
-                    msg.channel, config.get("name", "bot"), msg.receiver,
-                    content=bot_reply, date=msg.date, time=msg.time,
-                )
-            )
-
         # Event Message
         if msg.mtype == MessageType.Event:
             for c in channels:
                 target = b[c.ChanTag.lower()]
-                c.send_msg(target, ev_tmpl.format(content=msg.content))
+                c.send_msg(target, bot_msg_tmpl.format(content=msg.content))
             continue
 
         # Other Message
+        if msg.botmsg:
+            send_back = True
+
         if (msg.content.count('\n') > 5
                 or len(msg.content.encode('utf-8')) >= 400):
             text_url = text_store.new_paste(
@@ -146,24 +147,28 @@ def ForwardingThread(channels, text_store):
                 continue
             # messages = msg
             contents = [text_url + " (long text)", ]
-            send_back = True
         else:
             contents = [
                 line for line in msg.content.split("\n")
                 if not re.match(r'^\s*$', line)
             ]
-            send_back = False
 
         for c in channels:
+            if c.ChanTag == msg.channel and send_back is False:
+                continue
             target = b[c.ChanTag.lower()]
-            if c.ChanTag != msg.channel or send_back is True:
-                for line in contents:
-                    c.send_msg(
-                        target,
-                        msg_tmpl.format(sender=msg.sender, content=line)
-                    )
-            if bot_reply:
-                c.send_msg(target, bot_reply)
+            if c.SupportMultiline:
+                text = bot_msg_tmpl.format(content=msg.content) \
+                    if msg.botmsg else \
+                    msg_tmpl.format(sender=msg.sender, content=msg.content)
+                c.send_msg(target, text)
+                continue
+
+            for line in contents:
+                text = bot_msg_tmpl.format(content=line) \
+                    if msg.botmsg else \
+                    msg_tmpl.format(sender=msg.sender, content=line)
+                c.send_msg(target, text)
 
 
 def main():

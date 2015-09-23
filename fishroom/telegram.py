@@ -105,6 +105,7 @@ class RedisStickerURLStore(BaseStickerURLStore):
 class Telegram(BaseBotInstance):
 
     ChanTag = ChannelType.Telegram
+    SupportMultiline = True
 
     _api_base_tmpl = "https://api.telegram.org/bot{token}"
     _file_base_tmpl = "https://api.telegram.org/file/bot{token}/"
