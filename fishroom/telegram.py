@@ -261,7 +261,12 @@ class Telegram(BaseBotInstance):
             if r is None:
                 continue
 
-            ret = json.loads(r.text)
+            try:
+                ret = json.loads(r.text)
+            except:
+                print("Failed to parse json: %s" % r.text)
+                continue
+
             if ret["ok"] is False:
                 print("[Telegram Error] {}".format(ret["description"]))
                 continue
