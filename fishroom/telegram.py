@@ -188,7 +188,9 @@ class Telegram(BaseBotInstance):
 
         if "text" in jmsg:
             content = jmsg["text"]
-            mtype = MessageType.Text
+            mtype = MessageType.Command \
+                if self.is_cmd(jmsg["text"]) \
+                else MessageType.Text
 
         elif "photo" in jmsg:
             file_id = jmsg["photo"][-1]["file_id"]
@@ -218,7 +220,7 @@ class Telegram(BaseBotInstance):
                 from_info["first_name"], from_info["last_name"],
                 jmsg["new_chat_title"],
             )
-            mtype = MessageType.Text
+            mtype = MessageType.Event
         else:
             content = "(unsupported message type)"
             mtype = MessageType.Text
@@ -278,6 +280,9 @@ class Telegram(BaseBotInstance):
                 telemsg = self.parse_jmsg(jmsg)
                 if telemsg is None or telemsg.user_id in id_blacklist:
                     continue
+                if telemsg.mtype == MessageType.Command:
+                    if self.try_set_nick(telemsg) is not None:
+                        continue
 
                 nickname = self.nick_store.get_nickname(
                     telemsg.user_id, telemsg.username)
@@ -293,13 +298,36 @@ class Telegram(BaseBotInstance):
                     date=date, time=time,
                 )
 
+    def try_set_nick(self, msg):
+        # handle command
+        user_id = msg.user_id
+        target = "%d" % msg.chat_id
+        try:
+            tmp = msg.content.split()
+            cmd = tmp[0][1:].lower()
+            args = tmp[1:]
+        except:
+            return
+
+        if cmd == "nick":
+            if len(args) == 1:
+                nick = args[0]
+                self.nick_store.set_nickname(user_id, nick)
+                self.send_msg(target, "Changed nickname to '%s'" % nick)
+            else:
+                self.send_msg(
+                    target,
+                    "Invalid Command, use '/nick nickname'"
+                    "to change nickname."
+                )
+            return True
+
     def send_msg(self, peer, msg):
         api = self.api_base + "/sendMessage"
 
         data = {
             'chat_id': int(peer),
             'text': msg,
-            'disable_web_page_preview': True,
         }
         self._must_post(api, data)
 

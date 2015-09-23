@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sleekxmpp
 from .base import BaseBotInstance
-from .models import Message, ChannelType
+from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time
 
 
@@ -33,10 +33,14 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
     def on_muc_message(self, msg):
         if msg['mucnick'] != self.nick and msg['id']:
             date, time = get_now_date_time()
+            mtype = MessageType.Command \
+                if self.is_cmd(msg['body']) \
+                else MessageType.Text
+
             msg = Message(
                 ChannelType.XMPP,
                 msg['mucnick'], msg['from'].bare, msg['body'],
-                date=date, time=time)
+                mtype=mtype, date=date, time=time)
             self.send_to_bus(self, msg)
 
     def send_msg(self, target, content):

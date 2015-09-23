@@ -4,6 +4,7 @@ import redis
 import threading
 
 from .bus import MessageBus
+from .models import MessageType
 from .chatlogger import ChatLogger
 from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
@@ -11,6 +12,7 @@ from .telegram import (RedisNickStore, RedisStickerURLStore,
                        Telegram, TelegramThread)
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
+from .command import get_command_handler, parse_command
 
 from .config import config
 
@@ -19,6 +21,13 @@ redis_client = redis.StrictRedis(
     host=config['redis']['host'], port=config['redis']['port'])
 message_bus = MessageBus(redis_client)
 chat_logger = ChatLogger(redis_client)
+
+
+def load_plugins():
+    from importlib import import_module
+    for plugin in config['plugins']:
+        module = ".plugins." + plugin
+        import_module(module, package="fishroom")
 
 
 def init_text_store():
@@ -86,6 +95,7 @@ def ForwardingThread(channels, text_store):
         return (None, None)
 
     msg_tmpl = "[{sender}] {content}"
+    ev_tmpl = "{content}"
 
     for msg in message_bus.message_stream():
         c, b = get_binding(msg)
@@ -94,6 +104,27 @@ def ForwardingThread(channels, text_store):
             continue
 
         msg_id = chat_logger.log(c, msg)
+
+        # Event Message
+        if msg.mtype == MessageType.Event:
+            for c in channels:
+                target = b[c.ChanTag.lower()]
+                c.send_msg(target, ev_tmpl.format(content=msg.content))
+            continue
+
+        # Handle commands
+        bot_reply = ""
+        if msg.mtype == MessageType.Command:
+            try:
+                cmd, args = parse_command(msg.content)
+            except:
+                continue
+            handler = get_command_handler(cmd)
+            if handler is None:
+                continue
+            bot_reply = handler(cmd, *args, msg=msg)
+
+        # Other Message
         if (msg.content.count('\n') > 5
                 or len(msg.content.encode('utf-8')) >= 400):
             text_url = text_store.new_paste(
@@ -116,17 +147,20 @@ def ForwardingThread(channels, text_store):
             send_back = False
 
         for c in channels:
-            if (not send_back) and c.ChanTag == msg.channel:
-                continue
             target = b[c.ChanTag.lower()]
-            for line in contents:
-                c.send_msg(
-                    target,
-                    msg_tmpl.format(sender=msg.sender, content=line)
-                )
+            if c.ChanTag != msg.channel or send_back is True:
+                for line in contents:
+                    c.send_msg(
+                        target,
+                        msg_tmpl.format(sender=msg.sender, content=line)
+                    )
+            if bot_reply:
+                c.send_msg(target, bot_reply)
 
 
 def main():
+
+    load_plugins()
 
     irchandle = init_irc()
     tghandle = init_telegram()

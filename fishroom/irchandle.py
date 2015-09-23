@@ -4,7 +4,7 @@ import time
 import irc
 import irc.client
 from .base import BaseBotInstance
-from .models import Message, ChannelType
+from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time
 from .config import config
 
@@ -72,9 +72,13 @@ class IRCHandle(BaseBotInstance):
             return
         content = event.arguments[0]
         date, time = get_now_date_time()
+        mtype = MessageType.Command \
+            if self.is_cmd(content) \
+            else MessageType.Text
+
         msg = Message(
             ChannelType.IRC, irc_nick, event.target, content,
-            date=date, time=time
+            mtype=mtype, date=date, time=time
         )
         self.send_to_bus(self, msg)
 

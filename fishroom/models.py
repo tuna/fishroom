@@ -18,6 +18,8 @@ class MessageType(object):
     Text = "text"
     Photo = "photo"
     Sticker = "sticker"
+    Event = "event"
+    Command = "command"
 
 
 class Message(object):
@@ -46,10 +48,12 @@ class Message(object):
         self.time = time
 
     def __repr__(self):
-        return "[{channel}] from: {sender}, to: {receiver}, {content}".format(
-            channel=self.channel, sender=self.sender,
-            receiver=self.receiver, content=self.content,
-        )
+        return (
+            "[{channel}] {mtype} from: {sender}, to: {receiver}, {content}"
+            .format(
+                channel=self.channel, mtype=self.mtype, sender=self.sender,
+                receiver=self.receiver, content=self.content,
+            ))
 
     def dumps(self):
         return self._schema.dumps(self).data
@@ -69,7 +73,8 @@ class MessageSchema(Schema):
     sender = fields.String()
     receiver = fields.String()
     mtype = fields.Enum(
-        (MessageType.Photo, MessageType.Text, MessageType.Sticker, ),
+        (MessageType.Photo, MessageType.Text, MessageType.Sticker,
+         MessageType.Command, MessageType.Event),
     )
     content = fields.String()
     date = fields.String()
