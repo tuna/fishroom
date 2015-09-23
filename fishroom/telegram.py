@@ -305,7 +305,7 @@ class Telegram(BaseBotInstance):
 
 
 def TelegramThread(tg, bus):
-    for _, b in config["bindings"]:
+    for _, b in config["bindings"].items():
         if ChannelType.Telegram in b:
             to = b[ChannelType.Telegram]
             tg.send_msg(to, "I am Back!")
