@@ -198,7 +198,8 @@ class Telegram(BaseBotInstance):
             file_id = jmsg["photo"][-1]["file_id"]
             photo = self.download_file(file_id)
             if photo is not None:
-                url = self.photo_store.upload_image(filedata=photo)
+                url = self.photo_store.upload_image(filedata=photo) \
+                    or "(Failed to upload Image)"
                 content = url + " (photo)"
                 media_url = url
             else:
@@ -212,7 +213,8 @@ class Telegram(BaseBotInstance):
                 sticker = self.download_file(file_id)
                 if sticker is not None:
                     photo = webp2png(sticker)
-                    url = self.photo_store.upload_image(filedata=photo)
+                    url = self.photo_store.upload_image(filedata=photo) \
+                        or "(Failed to upload Image)"
                     media_url = url
                 else:
                     url = "(teleboto Faild to download file)"
