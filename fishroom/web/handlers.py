@@ -78,7 +78,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
         self.render(
             "chat_log.html",
-            title="Chat Log of #{channel} @ {date}".format(
+            title="#{channel} @ {date}".format(
                 channel=channel, date=date),
             msgs=msgs,
             next_id=len(msgs),

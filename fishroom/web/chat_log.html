@@ -9,9 +9,9 @@
 			{% for id, msg in enumerate(msgs) %}
 			{% if not embedded or id > next_id-limit-1 %}	
 			<li class="row" data-id="{{id}}">
-				<span class="time col-md-1">{{msg.time}}</span>
-				<span class="nickname col-md-2">{{msg.sender}}</span>
-				<span class="col-md-9">
+				<span class="nickname col-xs-6">{{msg.sender}}</span>
+				<span class="time col-xs-6 text-right">{{msg.time}}</span>
+				<span class="col-xs-12">
 					<span class="content">{{escape(msg.content)}}</span>
 					{% if msg.mtype in ("photo", "sticker") %}
 					<img class="thumbnail" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
@@ -40,31 +40,16 @@
 
 <script>
 $(document).ready(function() {
-	var getColor = function() {
+	var getColorNum = function() {
 		var cache = {};
-		function getColor_(str) {
+		function getColorNum_(str) {
 			if (cache[str]) {
 				return cache[str];
 			}
-
-			if (typeof md5 !== "undefined") {
-				var frag = parseInt(md5(str.charAt(0)=='ⓢ'? str.substr(2):str).substring(0,6), 16);
-			} else {
-				var frag = Math.floor(Math.random() * 0xffffff);
-				console.log('missing md5 support, using random color now!')
-			}
-
-			var h = Math.floor((frag & 0xff0000 >> 16) / 255 * 360);
-			var s = Math.floor((frag & 0xff00 >> 8) / 255 * 60 + 20);
-			var l = Math.floor((frag & 0xff) / 255 * 20 + 50);
-
-			//convert color with jQuery
-			var colorCode = $('<span></span>').css("color", "hsl(" + h + "," + s + "%," + l +"%)").css("color");
-
-			cache[str] = colorCode;
-			return colorCode;
+			var frag = parseInt(md5(str).substr(0, 8), 16);
+			return (frag >> 4) & 0x07;
 		}
-		return getColor_;
+		return getColorNum_;
 	}();
 
 	var convert = function(content){
@@ -93,9 +78,9 @@ $(document).ready(function() {
 		function _new_message(msg) {
 			$("ul#logs").append(
 					'<li class="row" data-id="' + next_id + '">' + 
-					'<span class="time col-md-1">' + msg.time + '</span>'	+
-					'<span class="nickname col-md-2" style="color: '+ getColor(msg.sender) +';">' + msg.sender + '</span>' +
-					'<span class="col-md-9">' + 
+					'<span class="nickname col-xs-6 nick-color-' + getColorNum(msg.sender) + '">' + msg.sender + '</span>' +
+					'<span class="time col-xs-6 text-right">' + msg.time + '</span>'	+
+					'<span class="col-xs-12">' + 
 						'<span class="content ">' + convert(msg.content) + '</span>' + _thumb(msg) +
 					'</span>' +
 					'</li>'
@@ -128,14 +113,15 @@ $(document).ready(function() {
 		};
 	};
 
-	CreateWebSocket();
 
 	$("#logs > li").each(function(i, e){
 		var nick = $(e).children(".nickname");
-		nick.css("color", getColor(nick.text()));
+		nick.addClass("nick-color-" + getColorNum(nick.text()));
 		var content = $(e).find(".content");
 		content.html(convert(content.text()));
 	});
+	
+	CreateWebSocket();
 
 });
 </script>
@@ -151,9 +137,13 @@ ul#logs {
 	padding-top: 10px;
 }
 ul#logs > li {
-	padding: 5px 10px;
+	padding-top: 7px;
+	padding-bottom: 7px;
 	line-height: 1.33;
 	border-top: 1px solid #EEE;
+}
+ul#logs > li:hover {
+	background-color: #fafafa;
 }
 ul#logs > li:first-child {
 	border-top: none;
@@ -167,6 +157,30 @@ ul#logs > li span.content {
 }
 ul#logs > li img.thumbnail {
 	max-height: 300px;
+}
+ul#logs .nick-color-0 {
+	color: #F89406;
+}
+ul#logs .nick-color-1 {
+	color: #9A12B3;
+}
+ul#logs .nick-color-2 {
+	color: #4183D7;
+}
+ul#logs .nick-color-3 {
+	color: #00B16A;
+}
+ul#logs .nick-color-4 {
+	color: #F9690E;
+}
+ul#logs .nick-color-5 {
+	color: #D2527F;
+}
+ul#logs .nick-color-6 {
+	color: #1BA39C;
+}
+ul#logs .nick-color-7 {
+	color: #1F3A93;
 }
 
 #footer {
