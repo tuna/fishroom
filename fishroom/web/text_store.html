@@ -3,20 +3,37 @@
 {% block content %}
 
 <div class="row">
-	<div class="col-md-12">
-		<h3>{{title}}</h3>
-		<p>{{time}}</p>
-		<pre>{{content}}</pre>
+	<div class="col-md-2"></div>
+	<div class="col-md-8">
+		<div class="panel panel-primary">
+			<div class="panel-heading">
+				<span> {{title}} </span>
+				<span class="pull-right hidden-xs"> {{time}}</span>
+				<span class="visible-xs"> {{time}}</span>
+			</div>
+			<div class="panel-body" id="text-content">
+					{{content}}
+			</div>
+		</div>
 	</div>
+	<div class="col-md-2"></div>
 </div>
 
+{% end %}
+
+{% block css %}
+<style>
+body {
+	padding-top: 20px;
+}
+</style>
 {% end %}
 
 {% block js %}
 <script>
 $(document).ready(function() {
-	$("pre").html(
-			emojione.toImage($("pre").text())
+	$("#text-content").html(
+			emojione.toImage($("#text-content").text())
 	);
 });
 </script>
