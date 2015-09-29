@@ -7,7 +7,7 @@ class BaseBotInstance(object):
     ChanTag = None
     SupportMultiline = False
 
-    def send_msg(self, target, content):
+    def send_msg(self, target, content, sender=None):
         pass
 
     def is_cmd(self, content):
@@ -16,5 +16,8 @@ class BaseBotInstance(object):
             and content[0] in LEADING_CHARS
             and content[1] not in LEADING_CHARS
         )
+
+    def msg_tmpl(self, sender=None):
+        return "{content}" if sender is None else "[{sender}] {content}"
 
 # vim: ts=4 sw=4 sts=4 expandtab

@@ -331,21 +331,26 @@ class Telegram(BaseBotInstance):
                 )
             return True
 
-    def send_msg(self, peer, msg):
+    def send_msg(self, peer, content, sender=None):
+        tmpl = self.msg_tmpl(sender)
         api = self.api_base + "/sendMessage"
 
         data = {
             'chat_id': int(peer),
-            'text': msg,
+            'text': tmpl.format(sender=sender, content=content),
+            'parse_mode': 'Markdown',
         }
         self._must_post(api, data)
+
+    def msg_tmpl(self, sender=None):
+        return "{content}" if sender is None else "*[{sender}]* {content}"
 
 
 def TelegramThread(tg, bus):
     for _, b in config["bindings"].items():
         if ChannelType.Telegram in b:
             to = b[ChannelType.Telegram]
-            tg.send_msg(to, "I am Back!")
+            tg.send_msg(to, "_I am Back!_")
 
     for msg in tg.message_stream():
         bus.publish(msg)

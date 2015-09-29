@@ -94,9 +94,6 @@ def ForwardingThread(channels, text_store):
                 return c, b
         return (None, None)
 
-    msg_tmpl = "[{sender}] {content}"
-    bot_msg_tmpl = "{content}"
-
     for msg in message_bus.message_stream():
         send_back = False
         c, b = get_binding(msg)
@@ -127,7 +124,7 @@ def ForwardingThread(channels, text_store):
         if msg.mtype == MessageType.Event:
             for c in channels:
                 target = b[c.ChanTag.lower()]
-                c.send_msg(target, bot_msg_tmpl.format(content=msg.content))
+                c.send_msg(target, msg.content, sender=None)
             continue
 
         # Other Message
@@ -158,17 +155,13 @@ def ForwardingThread(channels, text_store):
                 continue
             target = b[c.ChanTag.lower()]
             if c.SupportMultiline:
-                text = bot_msg_tmpl.format(content=msg.content) \
-                    if msg.botmsg else \
-                    msg_tmpl.format(sender=msg.sender, content=msg.content)
-                c.send_msg(target, text)
+                sender = None if msg.botmsg else msg.sender
+                c.send_msg(target, msg.content, sender=sender)
                 continue
 
             for line in contents:
-                text = bot_msg_tmpl.format(content=line) \
-                    if msg.botmsg else \
-                    msg_tmpl.format(sender=msg.sender, content=line)
-                c.send_msg(target, text)
+                sender = None if msg.botmsg else msg.sender
+                c.send_msg(target, content=line, sender=sender)
 
 
 def main():

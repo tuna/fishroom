@@ -91,7 +91,9 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
-    def send_msg(self, target, msg):
+    def send_msg(self, target, content, sender=None):
+        tmpl = self.msg_tmpl(sender)
+        msg = tmpl.format(sender=sender, content=content)
         try:
             self.irc_conn.privmsg(target, msg)
         except irc.client.ServerNotConnectedError:

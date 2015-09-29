@@ -43,8 +43,10 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
                 mtype=mtype, date=date, time=time)
             self.send_to_bus(self, msg)
 
-    def send_msg(self, target, content):
-        self.send_message(mto=target, mbody=content, mtype='groupchat')
+    def send_msg(self, target, content, sender=None):
+        tmpl = self.msg_tmpl(sender)
+        mbody = tmpl.format(sender=sender, content=content)
+        self.send_message(mto=target, mbody=mbody, mtype='groupchat')
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
