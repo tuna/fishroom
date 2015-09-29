@@ -1,4 +1,9 @@
 config = {
+    'debug': True,
+    'timezone': 'Asia/Shanghai',
+    'baseurl': 'http://localhost:8000',
+    'name': 'teleboto',
+
     'redis': {
         "host": "127.0.0.1",
         "port": 6379,
@@ -17,6 +22,9 @@ config = {
 
     'telegram': {
         'token': '',  # get this from @BotFather
+        'server': "127.0.0.1",
+        'port': 27219,
+        'me': [],  # token_id and tg user id
     },
 
     'xmpp': {
@@ -40,6 +48,10 @@ config = {
         'options': {
         },
     },
+
+    'plugins': [
+        'pia', 'imglink', 'vote'
+    ],
 
     'bindings': {
         "archlinux-cn": {
