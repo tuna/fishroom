@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-from __future__ import print_function, division, unicode_literals
 from ..command import command
+from .ratelimit import RateLimiter
+
+rlimiter = RateLimiter()
 
 
 @command("pia", desc="Pia somebody", usage="pia [name]")
 def pia(cmd, *args, **kwargs):
     _pia = "Pia!<(=ｏ ‵-′)ノ☆ "
+    room = kwargs.get('room', "ALL")
+    if rlimiter.check(room, cmd, period=15, count=2) is False:
+        return "Rate limited to " + _pia
+
     if len(args) == 0:
         # pia the bot
         msg = kwargs.get("msg", None)
