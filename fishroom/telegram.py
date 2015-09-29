@@ -293,6 +293,10 @@ class Telegram(BaseBotInstance):
                     if self.try_set_nick(telemsg) is not None:
                         continue
 
+                # Supress text messages, leave them to telegram_tg
+                if telemsg.mtype in (MessageType.Command, MessageType.Text):
+                    continue
+
                 nickname = self.nick_store.get_nickname(
                     telemsg.user_id, telemsg.username)
 
@@ -352,7 +356,8 @@ def TelegramThread(tg, bus):
             to = b[ChannelType.Telegram]
             tg.send_msg(to, "_I am Back!_")
 
-    for msg in tg.message_stream():
+    tele_me = [int(x) for x in config["telegram"]["me"]]
+    for msg in tg.message_stream(id_blacklist=tele_me):
         bus.publish(msg)
 
 

@@ -9,6 +9,7 @@ from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
 from .telegram import (RedisNickStore, RedisStickerURLStore,
                        Telegram, TelegramThread)
+from .telegram_tg import TgTelegram, TgTelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
 from .command import get_command_handler, parse_command
@@ -56,12 +57,17 @@ def init_telegram():
     sticker_url_store = RedisStickerURLStore(redis_client)
     photo_store = photo_store_init()
 
-    return Telegram(
-        config["telegram"]["token"],
-        sticker_url_store=sticker_url_store,
-        nick_store=nick_store,
-        photo_store=photo_store,
-    )
+    return (
+        Telegram(
+            config["telegram"]["token"],
+            sticker_url_store=sticker_url_store,
+            nick_store=nick_store,
+            photo_store=photo_store,
+        ),
+        TgTelegram(
+            config["telegram"]["server"], config["telegram"]["port"],
+            nick_store=nick_store,
+        ))
 
 
 def init_irc():
@@ -168,13 +174,14 @@ def main():
     load_plugins()
 
     irchandle = init_irc()
-    tghandle = init_telegram()
+    tghandle, tgtghandle = init_telegram()
     xmpphandle = init_xmpp()
     text_store = init_text_store()
     tasks = []
 
     for target, args in (
             (TelegramThread, (tghandle, message_bus), ),
+            (TgTelegramThread, (tgtghandle, message_bus), ),
             (IRCThread, (irchandle, message_bus), ),
             (XMPPThread, (xmpphandle, message_bus), ),
             (
