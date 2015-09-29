@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-
+import re
 import json
 import requests
 import requests.exceptions
@@ -326,7 +326,9 @@ class Telegram(BaseBotInstance):
             if len(args) == 1:
                 nick = args[0]
                 self.nick_store.set_nickname(user_id, nick)
-                self.send_msg(target, "Changed nickname to '%s'" % nick)
+                content = "Changed nickname to '%s'" % nick
+                print(target, content)
+                self.send_msg(target, content)
             else:
                 self.send_msg(
                     target,
@@ -335,7 +337,10 @@ class Telegram(BaseBotInstance):
                 )
             return True
 
-    def send_msg(self, peer, content, sender=None):
+    def send_msg(self, peer, content, sender=None, escape=True):
+        if escape:
+            content = re.sub(r'([\[\*_])', r'\\\1', content)
+
         tmpl = self.msg_tmpl(sender)
         api = self.api_base + "/sendMessage"
 
@@ -354,7 +359,7 @@ def TelegramThread(tg, bus):
     for _, b in config["bindings"].items():
         if ChannelType.Telegram in b:
             to = b[ChannelType.Telegram]
-            tg.send_msg(to, "_I am Back!_")
+            tg.send_msg(to, "_I am Back!_", escape=False)
 
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
