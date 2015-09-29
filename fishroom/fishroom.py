@@ -140,7 +140,7 @@ def ForwardingThread(channels, text_store):
                 or len(msg.content.encode('utf-8')) >= 400):
             text_url = text_store.new_paste(
                 msg.content, msg.sender,
-                channel=c, date=msg.date, time=msg.time, msg_id=msg_id
+                channel=room, date=msg.date, time=msg.time, msg_id=msg_id
             )
 
             if text_url is None:
