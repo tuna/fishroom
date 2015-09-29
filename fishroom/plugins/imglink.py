@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding:utf-8 -*-
-from __future__ import print_function, division, unicode_literals
 import re
 from ..models import MessageType
 from ..command import command

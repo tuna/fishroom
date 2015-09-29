@@ -88,15 +88,15 @@ def ForwardingThread(channels, text_store):
     bindings = config['bindings']
 
     def get_binding(msg):
-        for c, b in bindings.items():
+        for room, b in bindings.items():
             if msg.receiver == b[msg.channel.lower()]:
-                return c, b
+                return room, b
         return (None, None)
 
     for msg in message_bus.message_stream():
         send_back = False
-        c, b = get_binding(msg)
-        print(msg, c, len(msg.content.encode('utf-8')))
+        room, b = get_binding(msg)
+        print(msg, room, len(msg.content.encode('utf-8')))
         if b is None:
             continue
 
@@ -107,7 +107,7 @@ def ForwardingThread(channels, text_store):
                 cmd, args = parse_command(msg.content)
                 handler = get_command_handler(cmd).func
                 if handler is not None:
-                    bot_reply = handler(cmd, *args, msg=msg)
+                    bot_reply = handler(cmd, *args, msg=msg, room=room)
             except:
                 msg.mtype = MessageType.Text
 
@@ -118,7 +118,7 @@ def ForwardingThread(channels, text_store):
             )
             message_bus.publish(bot_msg)
 
-        msg_id = chat_logger.log(c, msg)
+        msg_id = chat_logger.log(room, msg)
         # Event Message
         if msg.mtype == MessageType.Event:
             for c in channels:
