@@ -44,7 +44,10 @@ class Imgur(BasePhotoStore):
             traceback.print_exc()
             return None
 
-        ret = json.loads(r.text)
+        try:
+            ret = json.loads(r.text)
+        except:
+            return None
         if ret.get('status', None) != 200 or ret.get('success', False) != True:
             print("Error: Imgur returned error, {}".format(ret.get('data', '')))
             return None
