@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import re
-import redis
 import threading
 
 from .bus import MessageBus
@@ -15,10 +14,10 @@ from .xmpp import XMPPHandle, XMPPThread
 from .command import get_command_handler, parse_command
 
 from .config import config
+from .db import get_redis
 
 
-redis_client = redis.StrictRedis(
-    host=config['redis']['host'], port=config['redis']['port'])
+redis_client = get_redis()
 message_bus = MessageBus(redis_client)
 chat_logger = ChatLogger(redis_client)
 
