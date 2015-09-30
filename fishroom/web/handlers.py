@@ -4,6 +4,7 @@ import tornado.web
 import tornado.websocket
 import tornado.gen as gen
 import tornadoredis
+import hashlib
 from urllib.parse import urlparse
 from ..helpers import get_now
 from ..models import Message
@@ -65,6 +66,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=channel, date=date)
         logs = yield gen.Task(r.lrange, key, 0, -1)
         msgs = [Message.loads(msg) for msg in logs]
+        for msg in msgs:
+            msg.name_style_num = self.name_style_num(msg.sender)
 
         baseurl = config["baseurl"]
         p = urlparse(baseurl)
@@ -89,6 +92,9 @@ class ChatLogHandler(tornado.web.RequestHandler):
         )
 
         # key =
+    def name_style_num(self, text):
+        m = hashlib.md5(text.encode('utf-8'))
+        return "%d" % (int(m.hexdigest()[:8], 16) & 0x07)
 
 
 class MessageStreamHandler(tornado.websocket.WebSocketHandler):

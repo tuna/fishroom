@@ -9,7 +9,7 @@
 			{% for id, msg in enumerate(msgs) %}
 			{% if not embedded or id > next_id-limit-1 %}	
 			<li class="row" data-id="{{id}}">
-				<span class="nickname col-xs-6">{{msg.sender}}</span>
+				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
 				<span class="col-xs-12">
 					<span class="content">{{escape(msg.content)}}</span>
@@ -47,7 +47,7 @@ $(document).ready(function() {
 				return cache[str];
 			}
 			var frag = parseInt(md5(str).substr(0, 8), 16);
-			return (frag >> 4) & 0x07;
+			return frag & 0x07;
 		}
 		return getColorNum_;
 	}();
@@ -60,9 +60,9 @@ $(document).ready(function() {
 		return emojione.toImage(
 				urlify(
 					content
-					.replace(/(?:\r\n|\r|\n)/g, '<br />')
-					.replace(/</, '&lt')
-					.replace(/>/, '&gt')
+					.replace(/</g, '&lt')
+					.replace(/>/g, '&gt')
+					.replace(/(?:\r\n|\r|\n)/g, '<br/>')
 				)
 			);
 	};
@@ -115,8 +115,6 @@ $(document).ready(function() {
 
 
 	$("#logs > li").each(function(i, e){
-		var nick = $(e).children(".nickname");
-		nick.addClass("nick-color-" + getColorNum(nick.text()));
 		var content = $(e).find(".content");
 		content.html(convert(content.text()));
 	});
