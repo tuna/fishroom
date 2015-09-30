@@ -135,7 +135,7 @@ class Telegram(BaseBotInstance):
             )
             return r
         except requests.exceptions.Timeout:
-            print("Error: Timeout uploading to Telegram")
+            print("Error: Timeout requesting Telegram")
         except KeyboardInterrupt:
             raise
         except:
