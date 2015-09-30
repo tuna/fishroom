@@ -100,6 +100,23 @@ def ForwardingThread(channels, text_store):
                 return room, b
         return (None, None)
 
+    def try_command(msg):
+        cmd, args = parse_command(msg.content)
+        if cmd is None:
+            msg.mtype = MessageType.Text
+            return
+
+        handler = get_command_handler(cmd)
+        if handler is None:
+            msg.mtype = MessageType.Text
+            return
+
+        try:
+            return handler.func(cmd, *args, msg=msg, room=room)
+        except:
+            import traceback
+            traceback.print_exc()
+
     for msg in message_bus.message_stream():
         send_back = False
         room, b = get_binding(msg)
@@ -110,13 +127,7 @@ def ForwardingThread(channels, text_store):
         # Handle commands
         bot_reply = ""
         if msg.mtype == MessageType.Command:
-            try:
-                cmd, args = parse_command(msg.content)
-                handler = get_command_handler(cmd).func
-                if handler is not None:
-                    bot_reply = handler(cmd, *args, msg=msg, room=room)
-            except:
-                msg.mtype = MessageType.Text
+            bot_reply = try_command(msg)
 
         if bot_reply:
             bot_msg = Message(

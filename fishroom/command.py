@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 import shlex
 from collections import namedtuple
+from .config import config
 
 LEADING_CHARS = ('/', '.')
 
@@ -9,6 +10,7 @@ CmdHandler = namedtuple(
     'CmdHandler',
     ('func', 'desc', 'usage')
 )
+CmdMe = config.get("cmd_me", "")
 
 command_handlers = {}
 
@@ -34,9 +36,12 @@ class InvalidCommand(Exception):
 def parse_command(content):
     tokens = shlex.split(content)
     if len(tokens) < 1:
-        raise InvalidCommand()
+        return None, None
     cmd = tokens.pop(0)
     assert cmd[0] in LEADING_CHARS and len(cmd) > 2
+    cmd, *botname = cmd.split('@')
+    if len(botname) == 1 and CmdMe not in botname:
+        return None, None
     args = tokens
     return cmd[1:], args
 
