@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pytz
+import requests
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
@@ -30,5 +31,20 @@ def webp2png(webp_data):
         im.save(out, "PNG")
         out.seek(0)
         return out.read()
+
+
+def download_file(url):
+    try:
+        r = requests.get(url, timeout=10)
+    except requests.exceptions.Timeout:
+        print("Error: Timeout downloading %s" % url)
+        return None, None
+    except:
+        import traceback
+        traceback.print_exc()
+        return None, None
+
+    return (r.content, r.headers.get('content-type'))
+
 
 # vim: ts=4 sw=4 sts=4 expandtab

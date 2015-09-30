@@ -6,8 +6,12 @@ class BaseBotInstance(object):
 
     ChanTag = None
     SupportMultiline = False
+    SupportPhoto = False
 
     def send_msg(self, target, content, sender=None):
+        pass
+
+    def send_photo(self, target, photo_data):
         pass
 
     def is_cmd(self, content):

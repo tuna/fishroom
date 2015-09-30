@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 import re
 import json
+import imghdr
 import requests
 import requests.exceptions
 from collections import namedtuple
@@ -106,6 +107,7 @@ class Telegram(BaseBotInstance):
 
     ChanTag = ChannelType.Telegram
     SupportMultiline = True
+    SupportPhoto = True
 
     _api_base_tmpl = "https://api.telegram.org/bot{token}"
     _file_base_tmpl = "https://api.telegram.org/file/bot{token}/"
@@ -126,12 +128,13 @@ class Telegram(BaseBotInstance):
             if isinstance(sticker_url_store, BaseStickerURLStore) \
             else BaseStickerURLStore()
 
-    def _must_post(self, api, data={}, timeout=10):
+    def _must_post(self, api, data={}, timeout=10, **kwargs):
         try:
             r = requests.post(
                 api,
                 data=data,
                 timeout=timeout,
+                **kwargs
             )
             return r
         except requests.exceptions.Timeout:
@@ -270,6 +273,7 @@ class Telegram(BaseBotInstance):
 
         api = self.api_base + "/getUpdates"
         offset = self._flush()
+        print("[Telegram] Ready!")
 
         while True:
             r = self._must_post(
@@ -302,10 +306,6 @@ class Telegram(BaseBotInstance):
                 if telemsg.mtype == MessageType.Command:
                     if self.try_set_nick(telemsg) is not None:
                         continue
-
-                # Supress text messages, leave them to telegram_tg
-                if telemsg.mtype in (MessageType.Command, MessageType.Text):
-                    continue
 
                 nickname = self.nick_store.get_nickname(
                     telemsg.user_id, telemsg.username)
@@ -347,6 +347,16 @@ class Telegram(BaseBotInstance):
                 )
             return True
 
+    def send_photo(self, target, photo_data):
+        api = self.api_base + "/sendPhoto"
+        ft = imghdr.what('', photo_data)
+        if ft is None:
+            return
+        filename = "image." + ft
+        data={'chat_id': target}
+        files={'photo': (filename, photo_data)}
+        self._must_post(api, data, files=files)
+
     def send_msg(self, peer, content, sender=None, escape=True):
         if escape:
             content = re.sub(r'([\[\*_])', r'\\\1', content)
@@ -373,6 +383,9 @@ def TelegramThread(tg, bus):
 
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
+        # Supress text messages, leave them to telegram_tg
+        if msg.mtype in (MessageType.Command, MessageType.Text):
+            continue
         bus.publish(msg)
 
 
@@ -382,6 +395,8 @@ if __name__ == '__main__':
     tele = Telegram(config['telegram']['token'],
                     nick_store=MemNickStore(), photo_store=VimCN())
     # tele.send_msg('user#67655173', 'hello')
+    tele.send_photo('-34678255', open('test.png', 'rb').read())
+    tele.send_msg('-34678255', "Back!")
     for msg in tele.message_stream():
         print(msg.dumps())
         tele.send_msg(msg.receiver, msg.content)

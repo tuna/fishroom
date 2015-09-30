@@ -13,6 +13,7 @@ from .telegram_tg import TgTelegram, TgTelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
 from .command import get_command_handler, parse_command
+from .helpers import download_file
 
 from .config import config
 from .db import get_redis
@@ -159,6 +160,15 @@ def ForwardingThread(channels, text_store):
             if c.ChanTag == msg.channel and send_back is False:
                 continue
             target = b[c.ChanTag.lower()]
+
+            if (msg.mtype == MessageType.Photo and c.SupportPhoto):
+                if msg.media_url:
+                    photo_data, ptype = download_file(msg.media_url)
+                    ptype.startswith("image")
+                    c.send_msg(target, "image", sender=msg.sender)
+                    c.send_photo(target, photo_data)
+                    continue
+
             if c.SupportMultiline:
                 sender = None if msg.botmsg else msg.sender
                 c.send_msg(target, msg.content, sender=sender)
