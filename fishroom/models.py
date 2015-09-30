@@ -9,6 +9,7 @@ class ChannelType(object):
     XMPP = "xmpp"
     IRC = "irc"
     Telegram = "telegram"
+    Web = "web"
 
 
 class MessageType(object):
@@ -18,6 +19,7 @@ class MessageType(object):
     Text = "text"
     Photo = "photo"
     Sticker = "sticker"
+    Location = "location"
     Event = "event"
     Command = "command"
 
@@ -77,7 +79,7 @@ class MessageSchema(Schema):
     receiver = fields.String()
     mtype = fields.Enum(
         (MessageType.Photo, MessageType.Text, MessageType.Sticker,
-         MessageType.Command, MessageType.Event),
+         MessageType.Location, MessageType.Command, MessageType.Event),
     )
     media_url = fields.String()
     content = fields.String()

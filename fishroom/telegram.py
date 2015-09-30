@@ -230,6 +230,16 @@ class Telegram(BaseBotInstance):
                 jmsg["new_chat_title"],
             )
             mtype = MessageType.Event
+        elif "location" in jmsg:
+            loc = jmsg["location"]
+            lon, lat = loc["longitude"], loc["latitude"]
+            mtype = MessageType.Location
+            content = (
+                ("location {lat},{lon}\n"
+                 "https://www.openstreetmap.org/?mlat={lat}&mlon={lon}")
+                .format(lat=lat, lon=lon)
+            )
+
         else:
             content = "(unsupported message type)"
             mtype = MessageType.Text
