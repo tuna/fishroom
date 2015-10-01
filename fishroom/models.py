@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
 
 
 class ChannelType(object):
@@ -10,6 +10,7 @@ class ChannelType(object):
     IRC = "irc"
     Telegram = "telegram"
     Web = "web"
+    API = "api"
 
 
 class MessageType(object):
@@ -22,6 +23,38 @@ class MessageType(object):
     Location = "location"
     Event = "event"
     Command = "command"
+
+
+class MessageSchema(Schema):
+    """\
+    Json Schema for Message
+    """
+
+    # Where is this message from
+    channel = fields.String(validate=validate.OneOf(
+        (ChannelType.IRC, ChannelType.XMPP, ChannelType.Telegram,
+         ChannelType.Web, ChannelType.API, ),
+    ))
+    # message sender
+    sender = fields.String()
+    # message receiver (usually group id)
+    receiver = fields.String()
+    # message type
+    mtype = fields.String(validate=validate.OneOf(
+        (MessageType.Photo, MessageType.Text, MessageType.Sticker,
+         MessageType.Location, MessageType.Command, MessageType.Event),
+    ))
+    # if message is photo or sticker, this contains url
+    media_url = fields.String()
+    # message text
+    content = fields.String()
+    # date and time
+    date = fields.String()
+    time = fields.String()
+    # is this message from fishroom bot?
+    botmsg = fields.Boolean()
+    # options to pass to send_msg method?
+    opt = fields.Dict()
 
 
 class Message(object):
@@ -37,11 +70,11 @@ class Message(object):
 
     """
 
-    _schema = None
+    _schema = MessageSchema()
 
     def __init__(self, channel, sender, receiver, content,
                  mtype=MessageType.Text, date=None, time=None,
-                 media_url=None, botmsg=False):
+                 media_url=None, botmsg=False, opt=None):
         self.channel = channel
         self.sender = sender
         self.receiver = receiver
@@ -51,6 +84,7 @@ class Message(object):
         self.time = time
         self.media_url = media_url
         self.botmsg = botmsg
+        self.opt = opt or {}
 
     def __repr__(self):
         return (
@@ -65,31 +99,7 @@ class Message(object):
 
     @classmethod
     def loads(cls, jstr):
-        return cls._schema.loads(jstr).data
+        return Message(**cls._schema.loads(jstr).data)
 
-
-class MessageSchema(Schema):
-    """\
-    Json Schema for Message
-    """
-    channel = fields.Enum(
-        (ChannelType.IRC, ChannelType.XMPP, ChannelType.Telegram, ),
-    )
-    sender = fields.String()
-    receiver = fields.String()
-    mtype = fields.Enum(
-        (MessageType.Photo, MessageType.Text, MessageType.Sticker,
-         MessageType.Location, MessageType.Command, MessageType.Event),
-    )
-    media_url = fields.String()
-    content = fields.String()
-    date = fields.String()
-    time = fields.String()
-    botmsg = fields.Boolean()
-
-    def make_object(self, kwargs):
-        return Message(**kwargs)
-
-Message._schema = MessageSchema()
 
 # vim: ts=4 sw=4 sts=4 expandtab
