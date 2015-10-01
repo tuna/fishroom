@@ -12,7 +12,7 @@
 				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
 				<span class="col-xs-12">
-					<span class="content">{{escape(msg.content)}}</span>
+					<span class="content">{% raw escape(msg.content).replace('\n', '<br />') %}</span>
 					{% if msg.mtype in ("photo", "sticker") %}
 					<img class="thumbnail" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
 					{% end %}
@@ -113,12 +113,6 @@ $(document).ready(function() {
 		};
 	};
 
-
-	$("#logs > li").each(function(i, e){
-		var content = $(e).find(".content");
-		content.html(convert(content.text()));
-	});
-	
 	CreateWebSocket();
 
 });

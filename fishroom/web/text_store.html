@@ -12,7 +12,7 @@
 				<span class="visible-xs"> {{time}}</span>
 			</div>
 			<div class="panel-body" id="text-content">
-					{{content}}
+				{{ escape(content).replace('\n', '<br />') }}
 			</div>
 		</div>
 	</div>
