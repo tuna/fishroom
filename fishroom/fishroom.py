@@ -127,13 +127,12 @@ def ForwardingThread(channels, text_store):
         # Handle commands
         bot_reply = ""
         if msg.mtype == MessageType.Command:
-            bot_reply, *opts = try_command(msg)
+            bot_reply = try_command(msg)
 
         if bot_reply:
-            if len(opts) == 1 and isinstance(opts[0], dict):
-                opt = opts[0]
-            else:
-                opt = None
+            opt = None
+            if isinstance(bot_reply, tuple) and len(bot_reply) == 2:
+                bot_reply, opt = bot_reply
             bot_msg = Message(
                 msg.channel, config.get("name", "bot"), msg.receiver,
                 content=bot_reply, date=msg.date, time=msg.time,

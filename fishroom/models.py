@@ -53,7 +53,7 @@ class MessageSchema(Schema):
     time = fields.String()
     # is this message from fishroom bot?
     botmsg = fields.Boolean()
-    # options to pass to send_msg method?
+    # channel specific options (passed to send_msg method)
     opt = fields.Dict()
 
 

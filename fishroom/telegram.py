@@ -132,7 +132,7 @@ class Telegram(BaseBotInstance):
         try:
             r = requests.post(
                 api,
-                data=data,
+                json=data,
                 timeout=timeout,
                 **kwargs
             )
@@ -369,8 +369,9 @@ class Telegram(BaseBotInstance):
             'text': tmpl.format(sender=sender, content=content),
             'parse_mode': 'Markdown',
         }
-        for k, v in kwargs.items():
-            data[k] = v
+        if 'telegram' in kwargs:
+            for k, v in kwargs['telegram'].items():
+                data[k] = v
         self._must_post(api, data)
 
     def msg_tmpl(self, sender=None):
