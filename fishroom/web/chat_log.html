@@ -52,19 +52,19 @@ $(document).ready(function() {
 		return getColorNum_;
 	}();
 
+	var esc = function(content) {
+		return 	content
+						.replace(/</g, '&lt')
+						.replace(/>/g, '&gt')
+						.replace(/(?:\r\n|\r|\n)/g, '<br/>')
+	};
+
 	var convert = function(content){
 		var urlify = function(text) {
 			var urlRegex = /(https?:\/\/[^\s]+)/g;
 			return text.replace(urlRegex, '<a href="$1">$1</a>')
 		}
-		return emojione.toImage(
-				urlify(
-					content
-					.replace(/</g, '&lt')
-					.replace(/>/g, '&gt')
-					.replace(/(?:\r\n|\r|\n)/g, '<br/>')
-				)
-			);
+		return emojione.toImage(urlify(content));
 	};
 
 	var new_message = function() {
@@ -81,7 +81,7 @@ $(document).ready(function() {
 					'<span class="nickname col-xs-6 nick-color-' + getColorNum(msg.sender) + '">' + msg.sender + '</span>' +
 					'<span class="time col-xs-6 text-right">' + msg.time + '</span>'	+
 					'<span class="col-xs-12">' + 
-						'<span class="content ">' + convert(msg.content) + '</span>' + _thumb(msg) +
+						'<span class="content ">' + convert(esc(msg.content)) + '</span>' + _thumb(msg) +
 					'</span>' +
 					'</li>'
 					);
@@ -112,6 +112,11 @@ $(document).ready(function() {
 			}, 5*1000);
 		};
 	};
+
+	$("#logs > li").each(function(i, e){
+		var content = $(e).find(".content");
+		content.html(convert(content.html()));
+	});
 
 	CreateWebSocket();
 
