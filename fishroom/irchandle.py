@@ -91,7 +91,7 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
-    def send_msg(self, target, content, sender=None):
+    def send_msg(self, target, content, sender=None, **kwargs):
         tmpl = self.msg_tmpl(sender)
         msg = tmpl.format(sender=sender, content=content)
         try:

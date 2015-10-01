@@ -357,7 +357,7 @@ class Telegram(BaseBotInstance):
         files={'photo': (filename, photo_data)}
         self._must_post(api, data, files=files)
 
-    def send_msg(self, peer, content, sender=None, escape=True):
+    def send_msg(self, peer, content, sender=None, escape=True, **kwargs):
         if escape:
             content = re.sub(r'([\[\*_])', r'\\\1', content)
 
@@ -369,6 +369,8 @@ class Telegram(BaseBotInstance):
             'text': tmpl.format(sender=sender, content=content),
             'parse_mode': 'Markdown',
         }
+        for k, v in kwargs.items():
+            data[k] = v
         self._must_post(api, data)
 
     def msg_tmpl(self, sender=None):

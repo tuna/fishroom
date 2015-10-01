@@ -127,12 +127,17 @@ def ForwardingThread(channels, text_store):
         # Handle commands
         bot_reply = ""
         if msg.mtype == MessageType.Command:
-            bot_reply = try_command(msg)
+            bot_reply, *opts = try_command(msg)
 
         if bot_reply:
+            if len(opts) == 1 and isinstance(opts[0], dict):
+                opt = opts[0]
+            else:
+                opt = None
             bot_msg = Message(
                 msg.channel, config.get("name", "bot"), msg.receiver,
-                content=bot_reply, date=msg.date, time=msg.time, botmsg=True
+                content=bot_reply, date=msg.date, time=msg.time,
+                botmsg=True, opt=opt
             )
             message_bus.publish(bot_msg)
 
@@ -176,18 +181,18 @@ def ForwardingThread(channels, text_store):
                 if msg.media_url:
                     photo_data, ptype = download_file(msg.media_url)
                     ptype.startswith("image")
-                    c.send_msg(target, "image", sender=msg.sender)
+                    c.send_msg(target, "image", sender=msg.sender, **msg.opt)
                     c.send_photo(target, photo_data)
                     continue
 
             if c.SupportMultiline:
                 sender = None if msg.botmsg else msg.sender
-                c.send_msg(target, msg.content, sender=sender)
+                c.send_msg(target, msg.content, sender=sender, **msg.opt)
                 continue
 
             for line in contents:
                 sender = None if msg.botmsg else msg.sender
-                c.send_msg(target, content=line, sender=sender)
+                c.send_msg(target, content=line, sender=sender, **msg.opt)
 
 
 def main():

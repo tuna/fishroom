@@ -8,7 +8,7 @@ class BaseBotInstance(object):
     SupportMultiline = False
     SupportPhoto = False
 
-    def send_msg(self, target, content, sender=None):
+    def send_msg(self, target, content, sender=None, **kwargs):
         pass
 
     def send_photo(self, target, photo_data):

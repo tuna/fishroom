@@ -43,7 +43,7 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
                 mtype=mtype, date=date, time=time)
             self.send_to_bus(self, msg)
 
-    def send_msg(self, target, content, sender=None):
+    def send_msg(self, target, content, sender=None, **kwargs):
         tmpl = self.msg_tmpl(sender)
         mbody = tmpl.format(sender=sender, content=content)
         self.send_message(mto=target, mbody=mbody, mtype='groupchat')
