@@ -128,14 +128,17 @@ class Telegram(BaseBotInstance):
             if isinstance(sticker_url_store, BaseStickerURLStore) \
             else BaseStickerURLStore()
 
-    def _must_post(self, api, data={}, timeout=10, **kwargs):
+    def _must_post(self, api, data=None, json=None, timeout=10, **kwargs):
+        if data is not None:
+            kwargs['data'] = data
+        elif json is not None:
+            kwargs['json'] = json
+        else:
+            kwargs['data'] = {}
+        kwargs['timeout'] = timeout
+
         try:
-            r = requests.post(
-                api,
-                json=data,
-                timeout=timeout,
-                **kwargs
-            )
+            r = requests.post(api, **kwargs)
             return r
         except requests.exceptions.Timeout:
             print("Error: Timeout requesting Telegram")
@@ -355,7 +358,7 @@ class Telegram(BaseBotInstance):
         filename = "image." + ft
         data={'chat_id': target}
         files={'photo': (filename, photo_data)}
-        self._must_post(api, data, files=files)
+        self._must_post(api, data=data, files=files)
 
     def send_msg(self, peer, content, sender=None, escape=True, **kwargs):
         if escape:
@@ -372,7 +375,7 @@ class Telegram(BaseBotInstance):
         if 'telegram' in kwargs:
             for k, v in kwargs['telegram'].items():
                 data[k] = v
-        self._must_post(api, data)
+        self._must_post(api, json=data)
 
     def msg_tmpl(self, sender=None):
         return "{content}" if sender is None else "*[{sender}]* {content}"
