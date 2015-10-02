@@ -14,7 +14,8 @@ from .config import config
 
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('user_id', 'username', 'chat_id', 'content', 'mtype', 'ts', 'media_url')
+    ('msg_id', 'user_id', 'username', 'chat_id',
+     'content', 'mtype', 'ts', 'media_url')
 )
 
 
@@ -188,6 +189,7 @@ class Telegram(BaseBotInstance):
             return r.content
 
     def parse_jmsg(self, jmsg):
+        msg_id = jmsg["message_id"]
         from_info = jmsg["from"]
         user_id, username = from_info["id"], from_info.get("username", "")
         chat_id = jmsg["chat"]["id"]
@@ -256,9 +258,8 @@ class Telegram(BaseBotInstance):
                 ffrom["first_name"], ffrom["last_name"])
 
         return TeleMessage(
-            user_id=user_id, username=username,
-            chat_id=chat_id, content=content,
-            mtype=mtype, ts=ts, media_url=media_url
+            msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
+            content=content, mtype=mtype, ts=ts, media_url=media_url
         )
 
     def message_stream(self, id_blacklist=None):
@@ -322,6 +323,7 @@ class Telegram(BaseBotInstance):
                     ChannelType.Telegram,
                     nickname, receiver, telemsg.content, telemsg.mtype,
                     date=date, time=time, media_url=telemsg.media_url,
+                    opt={'msg_id': telemsg.msg_id}
                 )
 
     def try_set_nick(self, msg):
@@ -390,7 +392,7 @@ def TelegramThread(tg, bus):
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
         # Supress text messages, leave them to telegram_tg
-        if msg.mtype in (MessageType.Command, MessageType.Text):
+        if msg.mtype == MessageType.Text:
             continue
         bus.publish(msg)
 

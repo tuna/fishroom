@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+from ..models import ChannelType
 from ..command import command
 from ..config import config
 from ..db import get_redis
@@ -201,6 +202,7 @@ def vote(cmd, *args, **kwargs):
             return "no options for the vote, cannot start"
         except VoteStarted:
             return "cannot start a vote twice"
+        #     pass
 
         _, _, options, _ = _vote_mgr.get_vote(room)
 
@@ -208,7 +210,7 @@ def vote(cmd, *args, **kwargs):
             'telegram': {
                 'reply_markup': {
                     'keyboard': [["/vote for "+o] for o in options],
-                    'one_time_keyboard': True
+                    'one_time_keyboard': True,
                 }
             }
         }
@@ -217,32 +219,40 @@ def vote(cmd, *args, **kwargs):
     elif subcmd == "end":
         ret = "❤  End vote, final result: \n" + get_result(room, end=True)
         _vote_mgr.end_vote(room)
-        return ret
-    elif subcmd == "for":
-        opt = ' '.join(args)
-        if not opt:
-            return "use /vote for <str> to vote"
-        try:
-            _vote_mgr.vote_for_opt(room, sender, opt)
-            return "👍 {} voted for: {}".format(sender, opt)
-        except NoOptions:
-            return "invalid option"
-        except VoteNotStarted:
-            return "vote not started"
-        except:
-            pass
+        params = {
+            'telegram': {
+                'reply_markup': {'hide_keyboard': True}
+            }
+        }
+        return ret, params
 
     else:
         try:
-            idx = int(subcmd) - 1
-            opt = _vote_mgr.vote_for(room, sender, idx)
-            return "👍 {} voted for: {}".format(sender, opt)
+            if subcmd == "for":
+                opt = ' '.join(args)
+                if not opt:
+                    return "use /vote for <str> to vote"
+                _vote_mgr.vote_for_opt(room, sender, opt)
+            else:
+                idx = int(subcmd) - 1
+                opt = _vote_mgr.vote_for(room, sender, idx)
+
         except NoOptions:
             return "invalid option"
         except VoteNotStarted:
             return "vote not started"
         except:
-            pass
+            return None
+
+        params = {
+            'telegram': {
+                'reply_markup': {'hide_keyboard': True, 'selective': True}
+            }
+        }
+        if msg.channel == ChannelType.Telegram:
+            if 'msg_id' in msg.opt:
+                params['telegram']['reply_to_message_id'] = msg.opt['msg_id']
+        return "👍 {} voted for: {}".format(sender, opt), params
 
     return "Invalid command, try .help vote for usage"
 

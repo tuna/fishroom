@@ -11,7 +11,7 @@ from .config import config
 
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('user_id', 'username', 'chat_id', 'content', 'mtype', 'ts')
+    ('msg_id', 'user_id', 'username', 'chat_id', 'content', 'mtype', 'ts',)
 )
 
 
@@ -53,6 +53,7 @@ class TgTelegram(BaseBotInstance):
         ts = jmsg.get('date', None)
 
         if mtype == "message":
+            msg_id = jmsg["id"]
             from_info = jmsg["from"]
             user_id, username = from_info["id"], from_info.get("username", "")
 
@@ -66,9 +67,8 @@ class TgTelegram(BaseBotInstance):
                     else MessageType.Text
 
                 return TeleMessage(
-                    user_id=user_id, username=username,
-                    chat_id=chat_id, content=content,
-                    mtype=mtype, ts=ts,
+                    msg_id=msg_id, user_id=user_id, username=username,
+                    chat_id=chat_id, content=content, mtype=mtype, ts=ts,
                 )
 
     def recv_header(self):
@@ -144,15 +144,16 @@ class TgTelegram(BaseBotInstance):
                 if telemsg.ts else get_now_date_time()
 
             yield Message(
-                ChannelType.Telegram,
-                nickname, receiver, telemsg.content, telemsg.mtype,
-                date=date, time=time,
+                ChannelType.Telegram, nickname, receiver,
+                telemsg.content, telemsg.mtype, date=date, time=time
             )
 
 
 def TgTelegramThread(tg, bus):
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
+        if msg.mtype == MessageType.Command:
+            continue
         bus.publish(msg)
 
 
