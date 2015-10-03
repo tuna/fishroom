@@ -99,6 +99,8 @@ class Message(object):
 
     @classmethod
     def loads(cls, jstr):
+        if isinstance(jstr, bytes):
+            jstr = jstr.decode('utf-8')
         return Message(**cls._schema.loads(jstr).data)
 
 
