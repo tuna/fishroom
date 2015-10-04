@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import json
 import requests
 import requests.exceptions
@@ -52,12 +53,13 @@ class Imgur(BasePhotoStore):
             print("Error: Imgur returned error, {}".format(ret.get('data', '')))
             return None
 
-        return ret.get('data', {}).get('link', None)
+        link = ret.get('data', {}).get('link', None)
+        return link if link is None else re.sub(r'^http:', 'https:', link)
 
 
 class VimCN(BasePhotoStore):
 
-    url = "http://img.vim-cn.com/"
+    url = "https://img.vim-cn.com/"
 
     def __init__(self, **kwargs):
         pass
