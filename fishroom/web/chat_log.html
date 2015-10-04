@@ -91,10 +91,15 @@ $(document).ready(function() {
 	}();
 
 	window.CreateWebSocket = function() {
-		var ws = new WebSocket("{{wsbaseurl}}/msg_stream");
+		var scheme=document.location.protocol.replace(/^http/g, 'ws'), 
+				host=document.location.host,
+				wsurl = scheme + '//' + host + '{{basepath}}/msg_stream';
+				ws = new WebSocket(wsurl);
+
 		ws.onopen = function() {
 			ws.send('{"channel": "{{channel}}"}');
 		};
+
 		ws.onmessage = function(ev) {
 			if (ev.data == "OK") {
 				console.log("OK");

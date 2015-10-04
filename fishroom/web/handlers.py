@@ -5,7 +5,6 @@ import tornado.websocket
 import tornado.gen as gen
 import tornadoredis
 import hashlib
-from urllib.parse import urlparse
 from ..helpers import get_now
 from ..models import Message
 from ..chatlogger import ChatLogger
@@ -69,12 +68,12 @@ class ChatLogHandler(tornado.web.RequestHandler):
         for msg in msgs:
             msg.name_style_num = self.name_style_num(msg.sender)
 
-        baseurl = config["baseurl"]
-        p = urlparse(baseurl)
-        if p.scheme == "http":
-            wsbaseurl = "ws://" + p.netloc + p.path
-        elif p.scheme == "https":
-            wsbaseurl = "wss://" + p.netloc + p.path
+        basepath = config.get("basepath", '')
+        # p = urlparse(baseurl)
+        # if p.scheme == "http":
+        #     wsbaseurl = "ws://" + p.netloc + p.path
+        # elif p.scheme == "https":
+        #     wsbaseurl = "wss://" + p.netloc + p.path
 
         embedded = self.get_argument("embedded", None)
         limit = self.get_argument("limit", 15)
@@ -86,7 +85,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
             msgs=msgs,
             next_id=len(msgs),
             channel=channel,
-            wsbaseurl=wsbaseurl,
+            basepath=basepath,
             embedded=(embedded is not None),
             limit=int(limit),
         )
