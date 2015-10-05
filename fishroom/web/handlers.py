@@ -61,7 +61,9 @@ class ChatLogHandler(tornado.web.RequestHandler):
             self.finish("Channel not found")
             return
 
+        enable_ws = False
         if date == "today":
+            enable_ws = True
             date = get_now().strftime("%Y-%m-%d")
 
         if (get_now() - tz.localize(datetime.strptime(date, "%Y-%m-%d"))
@@ -71,34 +73,31 @@ class ChatLogHandler(tornado.web.RequestHandler):
             return
 
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=channel, date=date)
-        logs = yield gen.Task(r.lrange, key, 0, -1)
+        mlen = yield gen.Task(r.llen, key)
+
+        embedded = self.get_argument("embedded", None)
+        limit = int(self.get_argument("limit", 15 if embedded else mlen))
+
+        logs = yield gen.Task(r.lrange, key, -limit, -1)
         msgs = [Message.loads(msg) for msg in logs]
         for msg in msgs:
             msg.name_style_num = self.name_style_num(msg.sender)
 
         basepath = config.get("basepath", '')
-        # p = urlparse(baseurl)
-        # if p.scheme == "http":
-        #     wsbaseurl = "ws://" + p.netloc + p.path
-        # elif p.scheme == "https":
-        #     wsbaseurl = "wss://" + p.netloc + p.path
-
-        embedded = self.get_argument("embedded", None)
-        limit = self.get_argument("limit", 15)
 
         self.render(
             "chat_log.html",
             title="#{channel} @ {date}".format(
                 channel=channel, date=date),
             msgs=msgs,
-            next_id=len(msgs),
+            next_id=mlen,
+            enable_ws=enable_ws,
             channel=channel,
             basepath=basepath,
             embedded=(embedded is not None),
             limit=int(limit),
         )
 
-        # key =
     def name_style_num(self, text):
         m = hashlib.md5(text.encode('utf-8'))
         return "%d" % (int(m.hexdigest()[:8], 16) & 0x07)

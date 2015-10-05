@@ -6,8 +6,7 @@
 	<div class="col-md-12">
 		{% if not embedded %} <h3>{{title}}</h3> {% end %}
 		<ul id="logs">
-			{% for id, msg in enumerate(msgs) %}
-			{% if not embedded or id > next_id-limit-1 %}	
+			{% for id, msg in enumerate(msgs, next_id-limit) %}
 			<li class="row" data-id="{{id}}">
 				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
@@ -18,7 +17,6 @@
 					{% end %}
 				</span>
 			</li>
-			{% end %}
 			{% end %}
 		</ul>
 	</div>
@@ -90,6 +88,12 @@ $(document).ready(function() {
 		return _new_message;
 	}();
 
+	$("#logs > li").each(function(i, e){
+		var content = $(e).find(".content");
+		content.html(convert(content.html()));
+	});
+
+	{% if enable_ws %}
 	window.CreateWebSocket = function() {
 		var scheme=document.location.protocol.replace(/^http/g, 'ws'), 
 				host=document.location.host,
@@ -117,14 +121,9 @@ $(document).ready(function() {
 			}, 5*1000);
 		};
 	};
-
-	$("#logs > li").each(function(i, e){
-		var content = $(e).find(".content");
-		content.html(convert(content.html()));
-	});
-
+	
 	CreateWebSocket();
-
+	{% end %}
 });
 </script>
 {% end %}
