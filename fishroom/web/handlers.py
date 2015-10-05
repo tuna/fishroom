@@ -5,7 +5,8 @@ import tornado.websocket
 import tornado.gen as gen
 import tornadoredis
 import hashlib
-from ..helpers import get_now
+from datetime import datetime, timedelta
+from ..helpers import get_now, tz
 from ..models import Message
 from ..chatlogger import ChatLogger
 from ..config import config
@@ -62,6 +63,13 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
         if date == "today":
             date = get_now().strftime("%Y-%m-%d")
+
+        if (get_now() - tz.localize(datetime.strptime(date, "%Y-%m-%d"))
+                > timedelta(days=7)):
+            self.set_status(403)
+            self.finish("Dark History Coverred")
+            return
+
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=channel, date=date)
         logs = yield gen.Task(r.lrange, key, 0, -1)
         msgs = [Message.loads(msg) for msg in logs]
