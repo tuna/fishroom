@@ -1,7 +1,7 @@
 config = {
     'debug': True,
     'timezone': 'Asia/Shanghai',
-    'baseurl': 'http://localhost:8000',
+    'baseurl': '',  # change this if your app is not located at '/'
     'name': 'teleboto',
 
     'redis': {

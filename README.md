@@ -21,8 +21,9 @@ big party again.
 ## TODO
 
 - [x] Implement Telegram protocol using Telegram Bot API
-- [ ] Plugin system
-- [ ] Chat with Bots
+- [x] Plugin system
+- [x] Chat with Bots
+- [ ] Convert `^nickname:` and `@nickname` to `@username`
 
 ## Related Projects
 
