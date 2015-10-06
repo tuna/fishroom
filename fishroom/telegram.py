@@ -29,6 +29,12 @@ class BaseNickStore(object):
     def set_nickname(self, user_id, nickname):
         return None
 
+    def set_username(self, nickname, username):
+        return None
+
+    def get_username(self, nickname):
+        return None
+
 
 class RedisNickStore(BaseNickStore):
     """\
@@ -40,6 +46,7 @@ class RedisNickStore(BaseNickStore):
     """
 
     NICKNAME_KEY = config["redis"]["prefix"] + ":" + "telegram_nicks"
+    USERNAME_KEY = config["redis"]["prefix"] + ":" + "telegram_usernames"
 
     def __init__(self, redis_client):
         self.r = redis_client
@@ -49,10 +56,20 @@ class RedisNickStore(BaseNickStore):
         if (not nick) and username:
             self.set_nickname(user_id, username)
             nick = username
+        if nick and username:
+            self.set_username(nick, username)
+        nick = nick.decode('utf-8') if isinstance(nick, bytes) else nick
         return nick or "tg-{}".format(user_id)
 
     def set_nickname(self, user_id, nickname):
         self.r.hset(self.NICKNAME_KEY, user_id, nickname)
+
+    def set_username(self, nickname, username):
+        self.r.hset(self.USERNAME_KEY, nickname, username)
+
+    def get_username(self, nickname):
+        n = self.r.hget(self.USERNAME_KEY, nickname)
+        return n.decode('utf-8') if isinstance(n, bytes) else n
 
 
 class MemNickStore(BaseNickStore):
@@ -62,16 +79,25 @@ class MemNickStore(BaseNickStore):
 
     def __init__(self):
         self.usernicks = {}
+        self.nickusers = {}
 
     def get_nickname(self, user_id, username=None):
         nick = self.usernicks.get(user_id)
         if (not nick) and username:
             self.set_nickname(user_id, username)
             nick = username
+        if nick and username:
+            self.set_username(nick, username)
         return nick or "tg-{}".format(user_id)
 
     def set_nickname(self, user_id, nickname):
         self.usernicks[user_id] = nickname
+
+    def set_username(self, nickname, username):
+        self.nickusers[nickname] = username
+
+    def get_username(self, nickname):
+        return self.nickusers.get(nickname, None)
 
 
 class BaseStickerURLStore(object):
@@ -112,6 +138,11 @@ class Telegram(BaseBotInstance):
 
     _api_base_tmpl = "https://api.telegram.org/bot{token}"
     _file_base_tmpl = "https://api.telegram.org/file/bot{token}/"
+
+    nickuser_regexes = [
+        re.compile(r'(?P<pre>.*\s|^)@(?P<nick>\w+)(?P<post>.*)'),
+        re.compile(r'(?P<pre>^)(?P<nick>\w+)(?P<post>:.*)'),
+    ]
 
     def __init__(self, token="", nick_store=None,
                  sticker_url_store=None, photo_store=None):
@@ -363,6 +394,16 @@ class Telegram(BaseBotInstance):
         self._must_post(api, data=data, files=files)
 
     def send_msg(self, peer, content, sender=None, escape=True, **kwargs):
+        for r in self.nickuser_regexes:
+            m = r.match(content)
+            if m is None:
+                continue
+            nick = m.group("nick")
+            username = self.nick_store.get_username(nick)
+            if username is None:
+                continue
+            content = r.sub(r'\g<pre>@{}\g<post>'.format(username), content)
+
         if escape:
             content = re.sub(r'([\[\*_])', r'\\\1', content)
 
