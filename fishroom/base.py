@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from .command import LEADING_CHARS, parse_command, get_command_handler
+from .command import LEADING_CHARS, parse_command
 
 
 class BaseBotInstance(object):
@@ -23,9 +23,9 @@ class BaseBotInstance(object):
             return False
         try:
             cmd, args = parse_command(content)
-            return get_command_handler(cmd) is not None
         except:
             return False
+        return True
 
     def msg_tmpl(self, sender=None):
         return "{content}" if sender is None else "[{sender}] {content}"

@@ -6,9 +6,11 @@ import tornado.gen as gen
 import tornadoredis
 import hashlib
 from datetime import datetime, timedelta
+from ..db import get_redis as get_pyredis
 from ..helpers import get_now, tz
 from ..models import Message
 from ..chatlogger import ChatLogger
+from ..api_client import APIClientManager
 from ..config import config
 
 
@@ -19,6 +21,7 @@ def get_redis():
     return r
 
 r = get_redis()
+pr = get_pyredis()
 
 
 class DefaultHandler(tornado.web.RequestHandler):
@@ -141,5 +144,33 @@ class MessageStreamHandler(tornado.websocket.WebSocketHandler):
             if self.r.subscribed:
                 self.r.unsubscribe(self.redis_chan)
             self.r.disconnect()
+
+
+class APILongPollingHandler(tornado.web.RequestHandler):
+
+    @gen.coroutine
+    def get(self):
+        token_id = self.get_argument("id")
+        token_key = self.get_argument("key")
+        mgr = APIClientManager(pr)
+        fine = mgr.auth(token_id, token_key)
+        if not fine:
+            self.set_status(403, "Invalid tokens")
+        # self.write("%s, %s, %s" % (fine, token_id, token_key))
+        queue = APIClientManager.queue_key.format(token_id=token_id)
+        l = yield gen.Task(r.llen, queue)
+        msgs = []
+        if l > 0:
+            msgs = yield gen.Task(r.lrange, queue, 0, -1)
+            pr.delete(queue)
+        else:
+            ret = yield gen.Task(r.blpop, queue, timeout=10)
+            if ret:
+                msgs = [ret]
+
+        ret = {'messages': msgs}
+        self.write(json.dumps(ret))
+        self.finish()
+
 
 

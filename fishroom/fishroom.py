@@ -12,6 +12,7 @@ from .telegram import (RedisNickStore, RedisStickerURLStore,
 from .telegram_tg import TgTelegram, TgTelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
+from .api_client import APIClientManager
 from .command import get_command_handler, parse_command
 from .helpers import download_file
 
@@ -22,6 +23,7 @@ from .db import get_redis
 redis_client = get_redis()
 message_bus = MessageBus(redis_client)
 chat_logger = ChatLogger(redis_client)
+api_mgr = APIClientManager(redis_client)
 
 
 def load_plugins():
@@ -123,6 +125,11 @@ def ForwardingThread(channels, text_store):
         print(msg, room, len(msg.content.encode('utf-8')))
         if b is None:
             continue
+
+        msg.room = room
+
+        # Deliver to api clients
+        api_mgr.publish(msg)
 
         # Handle commands
         bot_reply = ""

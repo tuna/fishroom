@@ -53,6 +53,8 @@ class MessageSchema(Schema):
     time = fields.String()
     # is this message from fishroom bot?
     botmsg = fields.Boolean()
+    # room
+    room = fields.String()
     # channel specific options (passed to send_msg method)
     opt = fields.Dict()
 
@@ -67,14 +69,18 @@ class Message(object):
         receiver: receiver name
         content: message content
         mtype: text or photo or sticker
-
+        media_url: URL to media if mtype is sticker or photo
+        date, time: message date and time
+        room: which room to deliver
+        botmsg: msg is from fishroom bot
+        opt: channel specific options
     """
 
     _schema = MessageSchema()
 
     def __init__(self, channel, sender, receiver, content,
                  mtype=MessageType.Text, date=None, time=None,
-                 media_url=None, botmsg=False, opt=None):
+                 media_url=None, botmsg=False, room=None, opt=None):
         self.channel = channel
         self.sender = sender
         self.receiver = receiver
@@ -84,6 +90,7 @@ class Message(object):
         self.time = time
         self.media_url = media_url
         self.botmsg = botmsg
+        self.room = room
         self.opt = opt or {}
 
     def __repr__(self):
