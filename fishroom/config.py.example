@@ -1,7 +1,7 @@
 config = {
     'debug': True,
     'timezone': 'Asia/Shanghai',
-    'baseurl': 'http://localhost:8000', 
+    'baseurl': 'http://localhost:8000',  # do not end with "/"
     'name': 'teleboto',
 
     'redis': {

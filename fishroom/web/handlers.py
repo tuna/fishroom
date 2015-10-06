@@ -4,7 +4,9 @@ import tornado.web
 import tornado.websocket
 import tornado.gen as gen
 import tornadoredis
+
 import hashlib
+from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from ..db import get_redis as get_pyredis
 from ..helpers import get_now, tz
@@ -86,7 +88,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
         for msg in msgs:
             msg.name_style_num = self.name_style_num(msg.sender)
 
-        basepath = config.get("basepath", '')
+        baseurl = config["baseurl"]
+        p = urlparse(baseurl)
 
         self.render(
             "chat_log.html",
@@ -96,7 +99,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
             next_id=mlen,
             enable_ws=enable_ws,
             channel=channel,
-            basepath=basepath,
+            basepath=p.path,
             embedded=(embedded is not None),
             limit=int(limit),
         )
