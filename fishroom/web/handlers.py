@@ -159,7 +159,8 @@ class APILongPollingHandler(tornado.web.RequestHandler):
         fine = mgr.auth(token_id, token_key)
         if not fine:
             self.set_status(403, "Invalid tokens")
-        # self.write("%s, %s, %s" % (fine, token_id, token_key))
+            self.finish()
+
         queue = APIClientManager.queue_key.format(token_id=token_id)
         l = yield gen.Task(r.llen, queue)
         msgs = []
