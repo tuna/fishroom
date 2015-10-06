@@ -3,7 +3,7 @@ import tornado.ioloop
 import tornado.web
 from .web.handlers import (
     DefaultHandler, TextStoreHandler, ChatLogHandler, MessageStreamHandler,
-    APILongPollingHandler
+    APILongPollingHandler, APIPostMessageHandler
 )
 from .config import config
 
@@ -16,6 +16,7 @@ def main():
         (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)/([0-9]+)", TextStoreHandler),
         (r"/msg_stream", MessageStreamHandler),
         (r"/api/messages", APILongPollingHandler),
+        (r"/api/messages/([a-z0-9_-]+)/", APIPostMessageHandler),
     ], debug=debug, autoreload=debug)
     application.listen(config['chatlog']['port'])
     print("Serving on port: {}".format(config['chatlog']['port']))

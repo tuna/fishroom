@@ -101,7 +101,7 @@ $(document).ready(function() {
 				ws = new WebSocket(wsurl);
 
 		ws.onopen = function() {
-			ws.send('{"channel": "{{channel}}"}');
+			ws.send('{"room": "{{room}}"}');
 		};
 
 		ws.onmessage = function(ev) {

@@ -11,6 +11,7 @@ class TokenException(Exception):
 class APIClientManager(object):
 
     clients_key = config["redis"]["prefix"] + ":api_clients"
+    clients_name_key = config["redis"]["prefix"] + ":api_clients_name"
     queue_key = config["redis"]["prefix"] + ":api:{token_id}"
     max_buffer = 15
 
@@ -38,20 +39,28 @@ class APIClientManager(object):
 
     def list_clients(self):
         tokens = self.r.hgetall(self.clients_key)
-        return [_id.decode('utf-8') for _id in tokens]
+        names_map = self.r.hgetall(self.clients_name_key)
+        ids = [_id.decode('utf-8') for _id in tokens]
+        names = [names_map.get(_id, b"nobot").decode('utf-8') for _id in tokens]
+        return zip(ids, names)
 
-    def add(self, token_id, token_key):
+    def add(self, token_id, token_key, name):
         if self.r.hexists(self.clients_key, token_id):
             raise TokenException("Token Id Existed!")
 
         m = hashlib.sha1()
         m.update(token_key.encode('utf-8'))
         self.r.hset(self.clients_key, token_id, m.digest())
+        self.r.hset(self.clients_name_key, token_id, name)
+
+    def get_name(self, token_id):
+        n = self.r.hget(self.clients_name_key, token_id)
+        return n.decode('utf-8') if isinstance(n, bytes) else None
 
     def revoke(self, token_id):
         self.r.hdel(self.clients_key, args.token_id)
         queue = self.queue_key.format(token_id=token_id)
-        self.delete(queue)
+        self.r.delete(queue)
 
     def exists(self, token_id):
         return self.r.hexists(self.clients_key, args.token_id)
@@ -80,6 +89,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="command", help="valid subcommands")
     subparsers.add_parser('list', aliases=['l'], help="list tokens")
     sp = subparsers.add_parser('add', aliases=['a'], help="add a token")
+    sp.add_argument('-n', '--name', required=True, help='bot name')
     sp.add_argument('token_id', nargs='?', default='',
                     help='token id (auto generate if unspecified)')
     sp.add_argument('token_key', nargs='?', default='',
@@ -101,7 +111,8 @@ if __name__ == "__main__":
     mgr = APIClientManager(r)
 
     if args.command in ("list", "l"):
-        print("\n".join(mgr.list_clients()))
+        print("\n".join(["{}: {}".format(_id, n)
+                         for _id, n in mgr.list_clients()]))
 
     elif args.command in ("add", "a"):
         if args.token_id and args.token_key:
@@ -114,11 +125,11 @@ if __name__ == "__main__":
             print('Please specify both or neither of token_id and token_key')
             sys.exit(-1)
         try:
-            mgr.add(token_id, token_key)
+            mgr.add(token_id, token_key, args.name)
         except TokenException as e:
             print(e)
         else:
-            print(token_id, token_key)
+            print(token_id, token_key, args.name)
 
     elif args.command in ("revoke", "r"):
         yn = input("Revoke token_id: {}? Y/[N]:".format(args.token_id))

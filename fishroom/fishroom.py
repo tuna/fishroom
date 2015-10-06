@@ -98,7 +98,7 @@ def ForwardingThread(channels, text_store):
 
     def get_binding(msg):
         for room, b in bindings.items():
-            if msg.receiver == b[msg.channel.lower()]:
+            if msg.receiver == b.get(msg.channel.lower(), None):
                 return room, b
         return (None, None)
 
@@ -121,12 +121,18 @@ def ForwardingThread(channels, text_store):
 
     for msg in message_bus.message_stream():
         send_back = False
-        room, b = get_binding(msg)
-        print(msg, room, len(msg.content.encode('utf-8')))
+        print(msg)
+        if msg.room is None:
+            room, b = get_binding(msg)
+            msg.room = room
+        else:
+            room = msg.room
+            b = bindings.get(room, None)
+
         if b is None:
             continue
 
-        msg.room = room
+        print(msg, msg.room, len(msg.content.encode('utf-8')))
 
         # Deliver to api clients
         api_mgr.publish(msg)

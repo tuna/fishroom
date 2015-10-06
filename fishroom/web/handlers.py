@@ -9,8 +9,9 @@ import hashlib
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from ..db import get_redis as get_pyredis
+from ..bus import MessageBus
 from ..helpers import get_now, tz
-from ..models import Message
+from ..models import Message, ChannelType
 from ..chatlogger import ChatLogger
 from ..api_client import APIClientManager
 from ..config import config
@@ -29,8 +30,8 @@ pr = get_pyredis()
 class DefaultHandler(tornado.web.RequestHandler):
 
     def get(self):
-        url = "/log/{channel}/today".format(
-            channel=config["chatlog"]["default_channel"]
+        url = "/log/{room}/today".format(
+            room=config["chatlog"]["default_channel"]
         )
         self.redirect(url)
 
@@ -38,8 +39,8 @@ class DefaultHandler(tornado.web.RequestHandler):
 class TextStoreHandler(tornado.web.RequestHandler):
 
     @gen.coroutine
-    def get(self, channel, date, msg_id):
-        key = ChatLogger.LOG_QUEUE_TMPL.format(channel=channel, date=date)
+    def get(self, room, date, msg_id):
+        key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
         msg_id = int(msg_id)
         val = yield gen.Task(r.lrange, key, msg_id, msg_id)
         if not val:
@@ -60,10 +61,10 @@ class TextStoreHandler(tornado.web.RequestHandler):
 class ChatLogHandler(tornado.web.RequestHandler):
 
     @gen.coroutine
-    def get(self, channel, date):
-        if channel not in config["bindings"]:
+    def get(self, room, date):
+        if room not in config["bindings"]:
             self.set_status(404)
-            self.finish("Channel not found")
+            self.finish("Room not found")
             return
 
         enable_ws = False
@@ -77,7 +78,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
             self.finish("Dark History Coverred")
             return
 
-        key = ChatLogger.LOG_QUEUE_TMPL.format(channel=channel, date=date)
+        key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
         mlen = yield gen.Task(r.llen, key)
 
         embedded = self.get_argument("embedded", None)
@@ -93,12 +94,12 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
         self.render(
             "chat_log.html",
-            title="#{channel} @ {date}".format(
-                channel=channel, date=date),
+            title="#{room} @ {date}".format(
+                room=room, date=date),
             msgs=msgs,
             next_id=mlen,
             enable_ws=enable_ws,
-            channel=channel,
+            room=room,
             basepath=p.path,
             embedded=(embedded is not None),
             limit=int(limit),
@@ -122,14 +123,14 @@ class MessageStreamHandler(tornado.websocket.WebSocketHandler):
         try:
             msg = json.loads(jmsg)
             self.r = get_redis()
-            self._listen(msg["channel"])
+            self._listen(msg["room"])
         except:
             self.close()
 
     @gen.engine
-    def _listen(self, channel):
-        print("polling on channel: ", channel)
-        self.redis_chan = ChatLogger.CHANNEL.format(channel=channel)
+    def _listen(self, room):
+        print("polling on room: ", room)
+        self.redis_chan = ChatLogger.CHANNEL.format(channel=room)
         yield gen.Task(self.r.subscribe, self.redis_chan)
         self.r.listen(self._on_update)
 
@@ -149,14 +150,18 @@ class MessageStreamHandler(tornado.websocket.WebSocketHandler):
             self.r.disconnect()
 
 
-class APILongPollingHandler(tornado.web.RequestHandler):
+class APIRequestHandler(tornado.web.RequestHandler):
+
+    mgr = APIClientManager(pr)
+
+
+class APILongPollingHandler(APIRequestHandler):
 
     @gen.coroutine
     def get(self):
         token_id = self.get_argument("id")
         token_key = self.get_argument("key")
-        mgr = APIClientManager(pr)
-        fine = mgr.auth(token_id, token_key)
+        fine = self.mgr.auth(token_id, token_key)
         if not fine:
             self.set_status(403, "Invalid tokens")
             self.finish()
@@ -175,6 +180,51 @@ class APILongPollingHandler(tornado.web.RequestHandler):
         ret = {'messages': msgs}
         self.write(json.dumps(ret))
         self.finish()
+
+
+class APIPostMessageHandler(APIRequestHandler):
+
+    def prepare(self):
+        if self.request.body:
+            try:
+                self.json_data = json.loads(self.request.body)
+            except ValueError:
+                message = 'Unable to parse JSON.'
+                self.write_json(400, message=message)  # Bad Request
+            return
+
+        self.write_json(400, message="Bad Request")  # Bad Request
+
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+
+    def write_json(self, status_code, **kwargs):
+        self.write(json.dumps(kwargs))
+
+    def post(self, room):
+        token_id = self.json_data.get("id", "NONE")
+        token_key = self.json_data.get("key", "NONE")
+        fine = self.mgr.auth(token_id, token_key)
+        if not fine:
+            self.write_json(403, "Invalid tokens")
+            return
+
+        content = self.json_data.get("content", None)
+        if not content:
+            self.write_json(400, "Cannot send empty message")
+
+        sender = self.mgr.get_name(token_id)
+        now = get_now()
+        date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
+        msg = Message(
+            ChannelType.API, sender, room, content=content,
+            date=date, time=time, room=room
+        )
+
+        pr.publish(MessageBus.CHANNEL, msg.dumps())
+        self.write("OK")
+        self.finish()
+
 
 
 
