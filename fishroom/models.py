@@ -113,7 +113,7 @@ class Message(object):
             m = Message(**cls._schema.loads(jstr).data)
             return m
         except:
-            return None
+            return Message("fishroom", "fishroom", "None", "Error")
 
 
 # vim: ts=4 sw=4 sts=4 expandtab
