@@ -74,7 +74,7 @@ def init_telegram():
 
 
 def init_irc():
-    irc_channels = [b["irc"] for _, b in config['bindings'].items()]
+    irc_channels = [b["irc"] for _, b in config['bindings'].items() if "irc" in b]
     server = config['irc']['server']
     port = config['irc']['port']
     nickname = config['irc']['nick']
@@ -84,7 +84,7 @@ def init_irc():
 
 
 def init_xmpp():
-    rooms = [b["xmpp"] for _, b in config['bindings'].items()]
+    rooms = [b["xmpp"] for _, b in config['bindings'].items() if "xmpp" in b]
     server = config['xmpp']['server']
     port = config['xmpp']['port']
     nickname = config['xmpp']['nick']
