@@ -108,7 +108,12 @@ class Message(object):
     def loads(cls, jstr):
         if isinstance(jstr, bytes):
             jstr = jstr.decode('utf-8')
-        return Message(**cls._schema.loads(jstr).data)
+
+        try:
+            m = Message(**cls._schema.loads(jstr).data)
+            return m
+        except:
+            return None
 
 
 # vim: ts=4 sw=4 sts=4 expandtab

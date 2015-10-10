@@ -87,6 +87,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
         logs = yield gen.Task(r.lrange, key, -limit, -1)
         msgs = [Message.loads(msg) for msg in logs]
         for msg in msgs:
+            if msg is None:
+                continue
             msg.name_style_num = self.name_style_num(msg.sender)
 
         baseurl = config["baseurl"]
