@@ -62,7 +62,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
     @gen.coroutine
     def get(self, room, date):
-        if room not in config["bindings"]:
+        if room not in config["bindings"] or \
+                room in config.get("private_rooms", []):
             self.set_status(404)
             self.finish("Room not found")
             return
