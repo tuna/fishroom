@@ -132,7 +132,7 @@ def ForwardingThread(channels, text_store):
         if b is None:
             continue
 
-        print(msg, msg.room, len(msg.content.encode('utf-8')))
+        # print(msg, msg.room, len(msg.content.encode('utf-8')))
 
         # Deliver to api clients
         api_mgr.publish(msg)
