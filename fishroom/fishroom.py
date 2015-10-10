@@ -187,7 +187,9 @@ def ForwardingThread(channels, text_store):
         for c in channels:
             if c.ChanTag == msg.channel and send_back is False:
                 continue
-            target = b[c.ChanTag.lower()]
+            target = b.get(c.ChanTag.lower(), None)
+            if target is None:
+                continue
 
             if (msg.mtype == MessageType.Photo and c.SupportPhoto):
                 if msg.media_url:
