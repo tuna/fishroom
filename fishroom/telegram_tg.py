@@ -128,11 +128,9 @@ class TgTelegram(BaseBotInstance):
             # return self.parse_msg(jmsg)
 
             telemsg = self.parse_msg(jmsg)
-            if telemsg is None or telemsg.user_id in id_blacklist:
-                continue
-
-            if telemsg.chat_id is None and telemsg.content.startswith("."):
-                self.handle_command(telemsg)
+            if (telemsg is None or
+                    telemsg.chat_id is None or
+                    telemsg.user_id in id_blacklist):
                 continue
 
             nickname = self.nick_store.get_nickname(
