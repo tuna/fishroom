@@ -265,7 +265,7 @@ class Telegram(BaseBotInstance):
 
         elif "new_chat_title" in jmsg:
             content = "{} {} changed group name to {}".format(
-                from_info["first_name"], from_info["last_name"],
+                from_info["first_name"], from_info.get("last_name", ""),
                 jmsg["new_chat_title"],
             )
             mtype = MessageType.Event
@@ -286,7 +286,7 @@ class Telegram(BaseBotInstance):
         if "forward_from" in jmsg:
             ffrom = jmsg["forward_from"]
             content = content + " <forwarded from {} {}>".format(
-                ffrom["first_name"], ffrom["last_name"])
+                ffrom["first_name"], ffrom.get("last_name", ""))
 
         return TeleMessage(
             msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
