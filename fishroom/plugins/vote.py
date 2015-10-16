@@ -204,12 +204,13 @@ def vote(cmd, *args, **kwargs):
             return "cannot start a vote twice"
         #     pass
 
-        _, _, options, _ = _vote_mgr.get_vote(room)
+        topic, _, options, _ = _vote_mgr.get_vote(room)
 
         opt = {
             'telegram': {
                 'reply_markup': {
-                    'keyboard': [["/vote for "+o] for o in options],
+                    'keyboard': ([[topic]] +
+                                 [["/vote for "+o] for o in options]),
                     'one_time_keyboard': True,
                 }
             }
@@ -249,9 +250,14 @@ def vote(cmd, *args, **kwargs):
                 'reply_markup': {'hide_keyboard': True, 'selective': True}
             }
         }
+
         if msg.channel == ChannelType.Telegram:
-            if 'msg_id' in msg.opt:
+            if msg.opt.get('username', ""):
+                sender = '@' + sender
+            # if username is not defined, use reply
+            elif 'msg_id' in msg.opt:
                 params['telegram']['reply_to_message_id'] = msg.opt['msg_id']
+
         return "👍 {} voted for: {}".format(sender, opt), params
 
     return "Invalid command, try .help vote for usage"

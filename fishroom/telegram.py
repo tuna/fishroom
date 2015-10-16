@@ -390,7 +390,8 @@ class Telegram(BaseBotInstance):
                     ChannelType.Telegram,
                     nickname, receiver, telemsg.content, telemsg.mtype,
                     date=date, time=time, media_url=telemsg.media_url,
-                    opt={'msg_id': telemsg.msg_id}
+                    opt={'msg_id': telemsg.msg_id,
+                         'username': telemsg.username}
                 )
 
     def try_set_nick(self, msg):
