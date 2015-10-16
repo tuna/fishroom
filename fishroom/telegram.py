@@ -124,7 +124,9 @@ class RedisStickerURLStore(BaseStickerURLStore):
         self.r = redis_client
 
     def get_sticker(self, sticker_id):
-        return self.r.hget(self.STICKER_KEY, sticker_id)
+        u = self.r.hget(self.STICKER_KEY, sticker_id)
+        if u:
+            return u.decode('utf-8')
 
     def set_sticker(self, sticker_id, url):
         self.r.hset(self.STICKER_KEY, sticker_id, url)
