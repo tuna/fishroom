@@ -264,6 +264,8 @@ class Telegram(BaseBotInstance):
         ts = jmsg["date"]
         media_url = ""
 
+        mtype = MessageType.Text
+
         if "text" in jmsg:
             content = jmsg["text"]
             mtype = MessageType.Command \
@@ -312,6 +314,7 @@ class Telegram(BaseBotInstance):
             newp = jmsg["new_paticipant"]
             content = "{} {} joined chat".format(
                 newp.get("first_name", ""), newp.get("last_name", ""))
+            mtype = MessageType.Event
 
         elif "audio" in jmsg:
             content = "(Audio)"
@@ -319,7 +322,6 @@ class Telegram(BaseBotInstance):
 
         else:
             content = "(unsupported message type)"
-            mtype = MessageType.Text
 
         if "forward_from" in jmsg:
             ffrom = jmsg["forward_from"]
