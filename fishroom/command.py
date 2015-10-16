@@ -29,10 +29,6 @@ def command(cmd, **options):
     return wrapper
 
 
-class InvalidCommand(Exception):
-    pass
-
-
 def parse_command(content):
     tokens = shlex.split(content)
     if len(tokens) < 1:

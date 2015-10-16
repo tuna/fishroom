@@ -21,11 +21,9 @@ class BaseBotInstance(object):
             and content[1] not in LEADING_CHARS
         ):
             return False
-        try:
-            cmd, args = parse_command(content)
-        except:
-            return False
-        return True
+
+        cmd, args = parse_command(content)
+        return (cmd is not None)
 
     def msg_tmpl(self, sender=None):
         return "{content}" if sender is None else "[{sender}] {content}"
