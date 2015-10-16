@@ -466,10 +466,10 @@ class Telegram(BaseBotInstance):
 
 
 def TelegramThread(tg, bus):
-    for _, b in config["bindings"].items():
-        if ChannelType.Telegram in b:
-            to = b[ChannelType.Telegram]
-            tg.send_msg(to, "_I am Back!_", escape=False)
+    # for _, b in config["bindings"].items():
+    #     if ChannelType.Telegram in b:
+    #         to = b[ChannelType.Telegram]
+    #         tg.send_msg(to, "_I am Back!_", escape=False)
 
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
