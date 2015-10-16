@@ -9,7 +9,7 @@ from collections import namedtuple
 from .base import BaseBotInstance
 from .photostore import BasePhotoStore
 from .models import Message, ChannelType, MessageType
-from .helpers import timestamp_date_time, get_now_date_time, webp2png
+from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
 from .config import config
 
 TeleMessage = namedtuple(
@@ -219,6 +219,41 @@ class Telegram(BaseBotInstance):
         if r.status_code == 200:
             return r.content
 
+    def upload_photo(self, file_id):
+        photo = self.download_file(file_id)
+        if photo is None:
+            return None, "teleboto Faild to download file"
+
+        url = self.photo_store.upload_image(filedata=photo)
+        if url is None:
+            return None, "Failed to upload Image"
+
+        return url, None
+
+    def upload_sticker(self, file_id):
+        url = self.sticker_url_store.get_sticker(file_id)
+        if url is not None:
+            return url, None
+
+        sticker = self.download_file(file_id)
+
+        if sticker is None:
+            return None, "teleboto failed to download file"
+
+        m = md5(sticker)
+        url = self.sticker_url_store.get_sticker(m)
+        if url is not None:
+            return url, None
+
+        photo = webp2png(sticker)
+        url = self.photo_store.upload_image(filedata=photo)
+        if url is None:
+            return None, "Failed to upload Image"
+
+        self.sticker_url_store.set_sticker(file_id, url)
+        self.sticker_url_store.set_sticker(m, url)
+        return url, None
+
     def parse_jmsg(self, jmsg):
         msg_id = jmsg["message_id"]
         from_info = jmsg["from"]
@@ -235,33 +270,23 @@ class Telegram(BaseBotInstance):
 
         elif "photo" in jmsg:
             file_id = jmsg["photo"][-1]["file_id"]
-            photo = self.download_file(file_id)
-            if photo is not None:
-                url = self.photo_store.upload_image(filedata=photo) \
-                    or "(Failed to upload Image)"
+            url, err = self.upload_photo(file_id)
+            if err is not None:
+                content = err
+            else:
                 content = url + " (photo)"
                 media_url = url
-            else:
-                content = "(teleboto Faild to download file)"
-            mtype = MessageType.Photo
+                mtype = MessageType.Photo
 
         elif "sticker" in jmsg:
             file_id = jmsg["sticker"]["file_id"]
-            url = self.sticker_url_store.get_sticker(file_id)
-            if url is None:
-                sticker = self.download_file(file_id)
-                if sticker is not None:
-                    photo = webp2png(sticker)
-                    url = self.photo_store.upload_image(filedata=photo) \
-                        or "(Failed to upload Image)"
-                    media_url = url
-                else:
-                    url = "(teleboto Faild to download file)"
+            url, err = self.upload_sticker(file_id)
+            if err is not None:
+                content = err
             else:
+                content = url + " (sticker)"
                 media_url = url
-
-            content = url + " (sticker)"
-            mtype = MessageType.Sticker
+                mtype = MessageType.Sticker
 
         elif "new_chat_title" in jmsg:
             content = "{} {} changed group name to {}".format(
@@ -269,6 +294,7 @@ class Telegram(BaseBotInstance):
                 jmsg["new_chat_title"],
             )
             mtype = MessageType.Event
+
         elif "location" in jmsg:
             loc = jmsg["location"]
             lon, lat = loc["longitude"], loc["latitude"]

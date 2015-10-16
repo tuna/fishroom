@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import pytz
 import requests
+import hashlib
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
@@ -31,6 +32,12 @@ def webp2png(webp_data):
         im.save(out, "PNG")
         out.seek(0)
         return out.read()
+
+
+def md5(data):
+    m = hashlib.md5()
+    m.update(data)
+    return m.hexdigest()
 
 
 def download_file(url):
