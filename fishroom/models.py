@@ -21,6 +21,7 @@ class MessageType(object):
     Photo = "photo"
     Sticker = "sticker"
     Location = "location"
+    Audio = "audio"
     Event = "event"
     Command = "command"
 
@@ -42,7 +43,8 @@ class MessageSchema(Schema):
     # message type
     mtype = fields.String(validate=validate.OneOf(
         (MessageType.Photo, MessageType.Text, MessageType.Sticker,
-         MessageType.Location, MessageType.Command, MessageType.Event),
+         MessageType.Location, MessageType.Audio, MessageType.Command,
+         MessageType.Event),
     ))
     # if message is photo or sticker, this contains url
     media_url = fields.String()

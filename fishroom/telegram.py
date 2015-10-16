@@ -290,7 +290,8 @@ class Telegram(BaseBotInstance):
 
         elif "new_chat_title" in jmsg:
             content = "{} {} changed group name to {}".format(
-                from_info["first_name"], from_info.get("last_name", ""),
+                from_info.get("first_name", ""),
+                from_info.get("last_name", ""),
                 jmsg["new_chat_title"],
             )
             mtype = MessageType.Event
@@ -305,6 +306,15 @@ class Telegram(BaseBotInstance):
                 .format(lat=lat, lon=lon)
             )
 
+        elif "new_chat_participant" in jmsg:
+            newp = jmsg["new_paticipant"]
+            content = "{} {} joined chat".format(
+                newp.get("first_name", ""), newp.get("last_name", ""))
+
+        elif "audio" in jmsg:
+            content = "(Audio)"
+            mtype = MessageType.Audio
+
         else:
             content = "(unsupported message type)"
             mtype = MessageType.Text
@@ -312,7 +322,7 @@ class Telegram(BaseBotInstance):
         if "forward_from" in jmsg:
             ffrom = jmsg["forward_from"]
             content = content + " <forwarded from {} {}>".format(
-                ffrom["first_name"], ffrom.get("last_name", ""))
+                ffrom.get("first_name", ""), ffrom.get("last_name", ""))
 
         return TeleMessage(
             msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
