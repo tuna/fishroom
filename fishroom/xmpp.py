@@ -20,8 +20,10 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
         self.register_plugin('xep_0045')  # Multi-User Chat
         self.register_plugin('xep_0199')  # XMPP Ping
 
-        if not self.connect((server, port)):
-            raise Exception("Unable to connect to XMPP server")
+        self.srvaddress = (server, port)
+
+        # if not self.connect((server, port)):
+        #     raise Exception("Unable to connect to XMPP server")
 
     def on_start(self, event):
         self.get_roster()
@@ -56,6 +58,7 @@ def XMPPThread(xmpp_handle, bus):
     def send_to_bus(self, msg):
         bus.publish(msg)
     xmpp_handle.send_to_bus = send_to_bus
+    xmpp_handle.connect(xmpp_handle.srvaddress, reattempt=True)
     xmpp_handle.process(block=True)
 
 
