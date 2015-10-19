@@ -466,17 +466,23 @@ class Telegram(BaseBotInstance):
 
 
 def TelegramThread(tg, bus):
-    # for _, b in config["bindings"].items():
-    #     if ChannelType.Telegram in b:
-    #         to = b[ChannelType.Telegram]
-    #         tg.send_msg(to, "_I am Back!_", escape=False)
+    def send_all(text):
+        for _, b in config["bindings"].items():
+            if ChannelType.Telegram in b:
+                to = b[ChannelType.Telegram]
+                tg.send_msg(to, text, escape=False)
 
     tele_me = [int(x) for x in config["telegram"]["me"]]
-    for msg in tg.message_stream(id_blacklist=tele_me):
-        # Supress text messages, leave them to telegram_tg
-        if msg.mtype == MessageType.Text:
-            continue
-        bus.publish(msg)
+    try:
+        for msg in tg.message_stream(id_blacklist=tele_me):
+            if msg.mtype == MessageType.Text:
+                continue
+            bus.publish(msg)
+    except:
+        send_all("**Bug Trapped! Save Me!**")
+        print("[Telegram Traceback]")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == '__main__':
