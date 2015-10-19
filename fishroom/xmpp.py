@@ -31,6 +31,7 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
         for room in self.rooms:
             self.plugin['xep_0045'].joinMUC(
                 room, self.nick, wait=True)
+            print("[xmpp] joined room %s" % room)
 
     def on_muc_message(self, msg):
         if msg['mucnick'] != self.nick and msg['id']:

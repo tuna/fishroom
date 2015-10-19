@@ -316,8 +316,8 @@ class Telegram(BaseBotInstance):
                 newp.get("first_name", ""), newp.get("last_name", ""))
             mtype = MessageType.Event
 
-        elif "audio" in jmsg:
-            content = "(Audio)"
+        elif "voice" in jmsg:
+            content = "(Voice Message)"
             mtype = MessageType.Audio
 
         else:
