@@ -311,7 +311,7 @@ class Telegram(BaseBotInstance):
             )
 
         elif "new_chat_participant" in jmsg:
-            newp = jmsg["new_paticipant"]
+            newp = jmsg["new_chat_participant"]
             content = "{} {} joined chat".format(
                 newp.get("first_name", ""), newp.get("last_name", ""))
             mtype = MessageType.Event
