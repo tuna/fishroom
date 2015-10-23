@@ -157,8 +157,11 @@ def ForwardingThread(channels, text_store):
         # Event Message
         if msg.mtype == MessageType.Event:
             for c in channels:
-                target = b[c.ChanTag.lower()]
-                c.send_msg(target, msg.content, sender=None)
+                if c.ChanTag == msg.channel:
+                    continue
+                target = b.get(c.ChanTag.lower())
+                if target is not None:
+                    c.send_msg(target, msg.content, sender=None)
             continue
 
         # Other Message
@@ -187,7 +190,7 @@ def ForwardingThread(channels, text_store):
         for c in channels:
             if c.ChanTag == msg.channel and send_back is False:
                 continue
-            target = b.get(c.ChanTag.lower(), None)
+            target = b.get(c.ChanTag.lower())
             if target is None:
                 continue
 
