@@ -11,7 +11,7 @@ def pia(cmd, *args, **kwargs):
     _pia = "Pia!<(=ｏ ‵-′)ノ☆ "
     room = kwargs.get('room', "ALL")
     if rlimiter.check(room, cmd, period=15, count=2) is False:
-        return "Rate limited to " + _pia
+        return
 
     if len(args) == 0:
         # pia the bot
@@ -29,7 +29,7 @@ def mua(cmd, *args, **kwargs):
     _mua = "💋 Mua!  "
     room = kwargs.get('room', "ALL")
     if rlimiter.check(room, cmd, period=15, count=2) is False:
-        return "Rate limited to " + _mua
+        return
 
     if len(args) == 0:
         # pia the bot
