@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
-from ..models import ChannelType
 from ..command import command
 from ..config import config
 from ..db import get_redis
@@ -122,7 +121,7 @@ class VoteManager(object):
         for idx, opt in enumerate(self.r.lrange(okey, 0, -1)):
             if opt.decode('utf-8') == option_str:
                 self.r.hset(vkey, voter, idx)
-                return
+                return idx
         raise NoOptions()
 
 
@@ -137,7 +136,6 @@ votemarks = ['⭐', '👍', '❤ ', '☀', ]
          "vote add '<option>': add vote option\n"
          "vote start: start voting\n"
          "vote <num>: vote for option num\n"
-         "vote for <str>: vote for option string\n"
          "vote end: end voting")
 def vote(cmd, *args, **kwargs):
     if 'room' not in kwargs or 'msg' not in kwargs:
@@ -145,7 +143,7 @@ def vote(cmd, *args, **kwargs):
     room = kwargs['room']
     msg = kwargs['msg']
 
-    def get_result(room, end=False):
+    def get_result(room, end=False, start=False):
         try:
             topic, status, options, voters = _vote_mgr.get_vote(room)
         except NoVote:
@@ -159,9 +157,15 @@ def vote(cmd, *args, **kwargs):
         for i, (opt, cnt) in enumerate(zip(options, counts), 1):
             mark = votemarks[(i-1) % len(votemarks)]
             ret += "{}. {}: {} {}\n".format(i, opt, mark*cnt, cnt)
-        if not end:
-            ret += "use .vote <number> to vote for your option"
-        return ret
+
+        if status == VoteManager.STAT_NEW:
+            ret += "voting not started yet"
+        else:
+            if not end:
+                ret += "use /vote <number> to vote for your option\n"
+            if start:
+                ret += "use /vote to show vote status\n"
+        return ret.strip()
 
     if len(args) == 0:
         return get_result(room)
@@ -179,7 +183,11 @@ def vote(cmd, *args, **kwargs):
         except VoteExisted:
             return "There is an on-going voting, end it before creating new."
 
-        return "👍 {} created vote: {}".format(sender, topic)
+        return (
+            "👍 {} created vote: {}\n"
+            "use /vote add <option> to add options\n"
+            "and /vote start to start voting"
+        ).format(sender, topic)
 
     elif subcmd == "add":
         opt = ' '.join(args)
@@ -191,7 +199,8 @@ def vote(cmd, *args, **kwargs):
             return "no ongoing votes"
         except VoteStarted:
             return "vote started, cannot add options now"
-        return "❤ {} added option: {}".format(sender, opt)
+
+        return "👍"
 
     elif subcmd == "start":
         try:
@@ -202,30 +211,14 @@ def vote(cmd, *args, **kwargs):
             return "no options for the vote, cannot start"
         except VoteStarted:
             return "cannot start a vote twice"
-        #     pass
 
         topic, _, options, _ = _vote_mgr.get_vote(room)
-
-        opt = {
-            'telegram': {
-                'reply_markup': {
-                    'keyboard': ([[topic]] +
-                                 [["/vote for "+o] for o in options]),
-                    'one_time_keyboard': True,
-                }
-            }
-        }
-        return get_result(room), opt
+        return get_result(room, start=True)
 
     elif subcmd == "end":
         ret = "❤  End vote, final result: \n" + get_result(room, end=True)
         _vote_mgr.end_vote(room)
-        params = {
-            'telegram': {
-                'reply_markup': {'hide_keyboard': True, 'selective': False}
-            }
-        }
-        return ret, params
+        return ret
 
     else:
         try:
@@ -233,7 +226,7 @@ def vote(cmd, *args, **kwargs):
                 opt = ' '.join(args)
                 if not opt:
                     return "use /vote for <str> to vote"
-                _vote_mgr.vote_for_opt(room, sender, opt)
+                idx = _vote_mgr.vote_for_opt(room, sender, opt)
             else:
                 idx = int(subcmd) - 1
                 opt = _vote_mgr.vote_for(room, sender, idx)
@@ -245,20 +238,7 @@ def vote(cmd, *args, **kwargs):
         except:
             return None
 
-        params = {
-            'telegram': {
-                'reply_markup': {'hide_keyboard': True, 'selective': True}
-            }
-        }
-
-        if msg.channel == ChannelType.Telegram:
-            if msg.opt.get('username', ""):
-                sender = '@' + sender
-            # if username is not defined, use reply
-            elif 'msg_id' in msg.opt:
-                params['telegram']['reply_to_message_id'] = msg.opt['msg_id']
-
-        return "👍 {} voted for: {}".format(sender, opt), params
+        return votemarks[idx % len(votemarks)]
 
     return "Invalid command, try .help vote for usage"
 
