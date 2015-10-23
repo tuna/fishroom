@@ -222,7 +222,7 @@ def vote(cmd, *args, **kwargs):
         _vote_mgr.end_vote(room)
         params = {
             'telegram': {
-                'reply_markup': {'hide_keyboard': True}
+                'reply_markup': {'hide_keyboard': True, 'selective': False}
             }
         }
         return ret, params
