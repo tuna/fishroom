@@ -25,6 +25,8 @@ class IRCHandle(BaseBotInstance):
 
         self.reactor = irc.client.Reactor()
         self.irc_conn = self.reactor.server()
+
+        print("[IRC] connecting to {}:{}".format(server, port))
         if usessl:
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             self.irc_conn.connect(
