@@ -12,7 +12,7 @@ from ..chatlogger import ChatLogger
 r = get_redis()
 
 
-@command("hualao", desc="show top-n talkative individuals", usage="talky [topn] [days]")
+@command("hualao", desc="show top-n talkative individuals", usage="hualao [topn] [days]")
 def hualao(cmd, *args, **kwargs):
     if 'room' not in kwargs:
         return None
@@ -27,7 +27,12 @@ def hualao(cmd, *args, **kwargs):
     elif len(args) == 2:
         topn, days = map(int, args)
     elif len(args) > 2:
-        return "talky: invalid arguments"
+        return "hualao: invalid arguments"
+
+    if topn > 10:
+        return "hualao: toooooo many hualaos"
+
+    days = min(days, 21)
 
     c = Counter()
     today = get_now()
