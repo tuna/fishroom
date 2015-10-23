@@ -3,6 +3,7 @@ import ssl
 import time
 import irc
 import irc.client
+import random
 from .base import BaseBotInstance
 from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time
@@ -88,7 +89,18 @@ class IRCHandle(BaseBotInstance):
         return self.on_privmsg(conn, event)
 
     def on_action(self, conn, event):
-        return self.on_privmsg(conn, event)
+        irc_nick = event.source[:event.source.index('!')]
+        if irc_nick in self.blacklist:
+            return
+        content = random.choice(('🐸', '❤️', '💊', '🈲')) + \
+            " {} {}".format(irc_nick, event.arguments[0])
+        date, time = get_now_date_time()
+        mtype = MessageType.Event
+        msg = Message(
+            ChannelType.IRC, irc_nick, event.target, content,
+            mtype=mtype, date=date, time=time
+        )
+        self.send_to_bus(self, msg)
 
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
