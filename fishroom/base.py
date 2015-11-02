@@ -22,7 +22,10 @@ class BaseBotInstance(object):
         ):
             return False
 
-        cmd, args = parse_command(content)
+        try:
+            cmd, args = parse_command(content)
+        except:
+            return False
         return (cmd is not None)
 
     def msg_tmpl(self, sender=None):
