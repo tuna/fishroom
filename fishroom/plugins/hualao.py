@@ -8,6 +8,9 @@ from ..command import command
 from ..models import Message
 from ..helpers import get_now
 from ..chatlogger import ChatLogger
+from .ratelimit import RateLimiter
+
+rlimiter = RateLimiter()
 
 r = get_redis()
 
@@ -18,6 +21,9 @@ def hualao(cmd, *args, **kwargs):
         return None
     room = kwargs['room']
     log_key_tmpl = ChatLogger.LOG_QUEUE_TMPL
+
+    if rlimiter.check(room, cmd, period=30, count=2) is False:
+        return
 
     days = 7
     topn = 10
