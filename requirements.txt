@@ -7,3 +7,4 @@ irc
 requests
 sleekxmpp
 pillow
+qiniu

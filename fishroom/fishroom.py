@@ -5,6 +5,8 @@ import threading
 from .bus import MessageBus
 from .models import MessageType, Message
 from .chatlogger import ChatLogger
+from .counter import Counter
+from .filestore import QiniuStore
 from .photostore import Imgur, VimCN
 from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
 from .telegram import (RedisNickStore, RedisStickerURLStore,
@@ -24,6 +26,7 @@ redis_client = get_redis()
 message_bus = MessageBus(redis_client)
 chat_logger = ChatLogger(redis_client)
 api_mgr = APIClientManager(redis_client)
+single_instances = {}
 
 
 def load_plugins():
@@ -46,6 +49,20 @@ def init_text_store():
         return ChatLoggerStore()
 
 
+def get_qiniu():
+
+    if 'qiniu' not in single_instances:
+        c = config['qiniu']
+        counter = Counter(redis_client, 'qiniu')
+        q = QiniuStore(
+            c['access_key'], c['secret_key'], c['bucket'],
+            counter, c['base_url'],
+        )
+        single_instances['qiniu'] = q
+
+    return single_instances['qiniu']
+
+
 def init_telegram():
 
     def photo_store_init():
@@ -55,6 +72,8 @@ def init_telegram():
             return Imgur(**options)
         elif provider == "vim-cn":
             return VimCN()
+        elif provider == "qiniu":
+            return get_qiniu()
 
     nick_store = RedisNickStore(redis_client)
     sticker_url_store = RedisStickerURLStore(redis_client)
