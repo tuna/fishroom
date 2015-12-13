@@ -8,7 +8,7 @@ from base64 import b64encode
 
 class BasePhotoStore(object):
 
-    def upload_image(self, filename):
+    def upload_image(self, filename, **kwargs):
         raise Exception("Not Implemented")
 
 
@@ -19,7 +19,7 @@ class Imgur(BasePhotoStore):
     def __init__(self, client_id, **kwargs):
         self.client_id = client_id
 
-    def upload_image(self, filename=None, filedata=None):
+    def upload_image(self, filename=None, filedata=None, **kwargs):
         if filedata is None:
             with open(filename, 'rb') as f:
                 b64img = b64encode(f.read())
@@ -64,7 +64,7 @@ class VimCN(BasePhotoStore):
     def __init__(self, **kwargs):
         pass
 
-    def upload_image(self, filename=None, filedata=None):
+    def upload_image(self, filename=None, filedata=None, **kwargs):
         if filedata is None:
             files = {"image": open(filename, 'rb')}
         else:

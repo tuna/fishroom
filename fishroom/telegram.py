@@ -5,9 +5,11 @@ import json
 import imghdr
 import requests
 import requests.exceptions
+import mimetypes
 from collections import namedtuple
 from .base import BaseBotInstance
 from .photostore import BasePhotoStore
+from .filestore import BaseFileStore
 from .models import Message, ChannelType, MessageType
 from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
 from .config import config
@@ -147,7 +149,7 @@ class Telegram(BaseBotInstance):
     ]
 
     def __init__(self, token="", nick_store=None,
-                 sticker_url_store=None, photo_store=None):
+                 sticker_url_store=None, photo_store=None, file_store=None):
         self._token = token
         self.api_base = self._api_base_tmpl.format(token=token)
         self.file_base = self._file_base_tmpl.format(token=token)
@@ -157,6 +159,9 @@ class Telegram(BaseBotInstance):
         self.nick_store = nick_store
         self.photo_store = photo_store \
             if isinstance(photo_store, BasePhotoStore) \
+            else None
+        self.file_store = file_store \
+            if isinstance(file_store, BaseFileStore) \
             else None
         self.sticker_url_store = sticker_url_store \
             if isinstance(sticker_url_store, BaseStickerURLStore) \
@@ -256,6 +261,30 @@ class Telegram(BaseBotInstance):
         self.sticker_url_store.set_sticker(m, url)
         return url, None
 
+    def upload_document(self, doc):
+        filedata = self.download_file(doc["file_id"])
+        if filedata is None:
+            return None, "teleboto Faild to download file"
+
+        url = self.file_store.upload_file(filedata, doc["file_name"])
+        if url is None:
+            return None, "Failed to upload Document"
+
+        return url, None
+
+    def upload_audio(self, file_id, mime):
+        filedata = self.download_file(file_id)
+        if filedata is None:
+            return None, "teleboto Faild to download file"
+
+        ext = mimetypes.guess_extension(mime)
+        filename = "voice" + ext
+        url = self.file_store.upload_file(filedata, filename, filetype="audio")
+        if url is None:
+            return None, "Failed to upload Document"
+
+        return url, None
+
     def parse_jmsg(self, jmsg):
         msg_id = jmsg["message_id"]
         from_info = jmsg["from"]
@@ -292,6 +321,36 @@ class Telegram(BaseBotInstance):
                 media_url = url
                 mtype = MessageType.Sticker
 
+        elif "document" in jmsg:
+            doc = jmsg["document"]
+            if doc["mime_type"].startswith("image/"):
+                url, err = self.upload_photo(doc["file_id"])
+                mtype = MessageType.Photo
+            else:
+                url, err = self.upload_document(doc)
+                mtype = MessageType.File
+
+            if err is not None:
+                content = err
+            else:
+                content = url + (
+                    " (file)" if mtype == MessageType.File else " (photo)"
+                )
+                media_url = url
+
+        elif "voice" in jmsg:
+            file_id = jmsg["voice"]["file_id"]
+            mime_type = jmsg["voice"]["mime_type"]
+
+            url, err = self.upload_audio(file_id, mime_type)
+
+            if err is not None:
+                content = err
+            else:
+                content = url + " (Voice Message)"
+                media_url = url
+                mtype = MessageType.Audio
+
         elif "new_chat_title" in jmsg:
             content = "{} {} changed group name to {}".format(
                 from_info.get("first_name", ""),
@@ -315,10 +374,6 @@ class Telegram(BaseBotInstance):
             content = "{} {} joined chat".format(
                 newp.get("first_name", ""), newp.get("last_name", ""))
             mtype = MessageType.Event
-
-        elif "voice" in jmsg:
-            content = "(Voice Message)"
-            mtype = MessageType.Audio
 
         else:
             content = "(unsupported message type)"

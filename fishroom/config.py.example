@@ -35,12 +35,23 @@ config = {
         'nick': 'XiaoT',
     },
 
+    'qiniu': {
+        'access_key': '',
+        'secret_key': '',
+        'bucket': '',
+        'base_url': '',
+    },
+
     'photo_store': {
-        # set one in ("imgur", "vim-cn")
+        # set one in ("imgur", "vim-cn", "qiniu")
         'provider': "vim-cn",
         'options': {
             'client_id': "",
         }
+    },
+ 
+    'file_store': {
+        'provider': "qiniu",
     },
 
     'text_store': {

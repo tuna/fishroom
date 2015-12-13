@@ -78,6 +78,12 @@ def init_telegram():
     nick_store = RedisNickStore(redis_client)
     sticker_url_store = RedisStickerURLStore(redis_client)
     photo_store = photo_store_init()
+    file_store = None
+
+    if "file_store" in config:
+        provider = config["file_store"]["provider"]
+        if provider == "qiniu":
+            file_store = get_qiniu()
 
     return (
         Telegram(
@@ -85,6 +91,7 @@ def init_telegram():
             sticker_url_store=sticker_url_store,
             nick_store=nick_store,
             photo_store=photo_store,
+            file_store=file_store,
         ),
         TgTelegram(
             config["telegram"]["server"], config["telegram"]["port"],
