@@ -12,11 +12,13 @@
 				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
 				<span class="col-xs-12">
+					<span class="content">
+					{% if msg.mtype not in ("photo", "sticker", "audio") %}{% raw escape(msg.content).replace('\n', '<br />') %}{% end%}
+					</span>
 					{% if msg.mtype in ("photo", "sticker") %}
-						<span class="content"></span>
 						<img class="thumbnail fishroom-{{msg.mtype}}" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
-					{% else %}
-						<span class="content">{% raw escape(msg.content).replace('\n', '<br />') %}</span>
+					{% elif msg.mtype == "audio" %}
+						<audio class="fishroom-audio" controls><source src="{{msg.media_url}}" /></audio>
 					{% end %}
 				</span>
 			</li>
@@ -76,9 +78,18 @@ $(document).ready(function() {
 		var next_id = {{next_id}};
 		var _thumb = function(msg) {
 			if (msg.mtype == "photo" || msg.mtype == "sticker") {
-				return '<img class="thumbnail fishroom-' + msg.mtype + '" src="' + msg.media_url + '">'
+				return '<img class="thumbnail fishroom-' + msg.mtype + '" src="' + msg.media_url + '" />';
+			}
+			else if (msg.mtype == "audio") {
+				return '<audio class="fishroom-audio" controls><source src="' + msg.media_url + '" /></audio>';
 			}
 			return "";
+		};
+		var _content = function(msg) {
+			if (msg.mtype == "photo" || msg.mtype == "sticker") {
+				return "";
+			}
+			return convert(esc(msg.content));
 		};
 		function _new_message(msg) {
 			$("ul#logs").append(
@@ -86,7 +97,7 @@ $(document).ready(function() {
 					'<span class="nickname col-xs-6 nick-color-' + getColorNum(msg.sender) + '">' + msg.sender + '</span>' +
 					'<span class="time col-xs-6 text-right">' + msg.time + '</span>'	+
 					'<span class="col-xs-12">' + 
-						'<span class="content ">' + convert(esc(msg.content)) + '</span>' + _thumb(msg) +
+						'<span class="content ">' + _convert(msg) + '</span>' + _thumb(msg) +
 					'</span>' +
 					'</li>'
 					);
@@ -170,6 +181,9 @@ ul#logs > li img.thumbnail {
 	margin-top: 5px;
 	max-height: 300px;
 	max-width: 100%;
+}
+ul#logs > li audio.fishroom-audio {
+	margin-top: 5px;
 }
 ul#logs > li img.thumbnail.fishroom-sticker {
 	max-width: 200px;
