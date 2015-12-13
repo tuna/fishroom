@@ -12,9 +12,11 @@
 				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
 				<span class="col-xs-12">
-					<span class="content">{% raw escape(msg.content).replace('\n', '<br />') %}</span>
 					{% if msg.mtype in ("photo", "sticker") %}
-					<img class="thumbnail fishroom-{{msg.mtype}}" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
+						<span class="content"></span>
+						<img class="thumbnail fishroom-{{msg.mtype}}" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
+					{% else %}
+						<span class="content">{% raw escape(msg.content).replace('\n', '<br />') %}</span>
 					{% end %}
 				</span>
 			</li>
@@ -165,11 +167,13 @@ ul#logs > li span.content {
 	min-height: 20px;
 }
 ul#logs > li img.thumbnail {
+	margin-top: 5px;
 	max-height: 300px;
 	max-width: 100%;
 }
 ul#logs > li img.thumbnail.fishroom-sticker {
 	max-width: 200px;
+	border: none;
 }
 ul#logs .nick-color-0 {
 	color: #F89406;
