@@ -253,7 +253,7 @@ class Telegram(BaseBotInstance):
             return url, None
 
         photo = webp2png(sticker)
-        url = self.photo_store.upload_image(filedata=photo)
+        url = self.photo_store.upload_image(filedata=photo, tag="sticker")
         if url is None:
             return None, "Failed to upload Image"
 
