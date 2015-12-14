@@ -23,7 +23,7 @@ big party again.
 - [x] Implement Telegram protocol using Telegram Bot API
 - [x] Plugin system
 - [x] Chat with Bots
-- [ ] Convert `^nickname:` and `@nickname` to `@username`
+- [x] Convert `^nickname:` and `@nickname` to `@username`
 
 ## Related Projects
 
