@@ -212,6 +212,7 @@ class Telegram(BaseBotInstance):
             return latest["update_id"] + 1
 
     def download_file(self, file_id):
+        print("[Telegram] downloading file {}".format(file_id))
         api = self.api_base + "/getFile"
         r = self._must_post(api, data={'file_id': file_id})
         if r is None:
@@ -231,6 +232,7 @@ class Telegram(BaseBotInstance):
         if photo is None:
             return None, "teleboto Faild to download file"
 
+        print("[Telegram] uploading photo {}".format(file_id))
         url = self.photo_store.upload_image(filedata=photo)
         if url is None:
             return None, "Failed to upload Image"
@@ -243,6 +245,7 @@ class Telegram(BaseBotInstance):
             return url, None
 
         sticker = self.download_file(file_id)
+        print("[Telegram] uploading sticker {}".format(file_id))
 
         if sticker is None:
             return None, "teleboto failed to download file"
@@ -266,6 +269,7 @@ class Telegram(BaseBotInstance):
         if filedata is None:
             return None, "teleboto Faild to download file"
 
+        print("[Telegram] uploading document {}".format(doc["file_id"]))
         url = self.file_store.upload_file(filedata, doc["file_name"])
         if url is None:
             return None, "Failed to upload Document"
