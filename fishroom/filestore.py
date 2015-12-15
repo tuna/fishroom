@@ -17,13 +17,15 @@ class QiniuStore(BaseFileStore, BasePhotoStore):
             import qiniu
         except ImportError:
             raise Exception("qiniu sdk is not installed")
-        auth = qiniu.Auth(access_key, secret_key)
         self.qiniu = qiniu
-        self.token = auth.upload_token(bucket_name)
+
+        self.auth = qiniu.Auth(access_key, secret_key)
+        self.bucket = bucket_name
         self.counter = counter
         self.base_url = base_url
 
     def upload_image(self, filename=None, filedata=None, tag=None):
+        token = self.auth.upload_token(self.bucket)
         if filedata is None:
             with open(filename, 'rb') as f:
                 filedata = f.read()
@@ -34,15 +36,17 @@ class QiniuStore(BaseFileStore, BasePhotoStore):
         prefix = tag or "img"
         name = "%s/%02x.%s" % (prefix, self.counter.incr(), ext)
 
-        ret, info = self.qiniu.put_data(self.token, name, filedata)
+        ret, info = self.qiniu.put_data(token, name, filedata)
         if ret is None:
             return
 
         return self.base_url + name
 
     def upload_file(self, filedata, filename, filetype="file"):
+        token = self.auth.upload_token(self.bucket)
+
         name = "%s/%02x-%s" % (filetype, self.counter.incr(), filename)
-        ret, info = self.qiniu.put_data(self.token, name, filedata)
+        ret, info = self.qiniu.put_data(token, name, filedata)
         if ret is None:
             return
         return self.base_url + name
