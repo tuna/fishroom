@@ -39,7 +39,7 @@
 </div>
 {% end %}
 
-<div id="chatbar">
+<div id="chatbar" class="row">
 	<div class="join-chat hidden">
 		<form class="form-inline">
 			<div class="form-group">
@@ -50,16 +50,16 @@
 		</form>
 	</div>
 	<div class="send-text hidden">
-	<form>
-		<div class="form-group">
-			<label class="sr-only" for="my-msg-text"></label>
-			<div class="input-group">
-				<span class="input-group-addon"></span>
-				<input type="text" class="form-control" id="my-msg-text" />
+		<form>
+			<div class="form-group">
+				<label class="sr-only" for="my-msg-text"></label>
+				<div class="input-group">
+					<span class="input-group-addon"></span>
+					<input type="text" class="form-control" id="my-msg-text" />
+				</div>
 			</div>
-		</div>
-		<span class="btn btn-primary" id="btn-send-msg"> Send </span>
-	</form>
+			<span class="btn btn-primary" id="btn-send-msg"> Send </span>
+		</form>
 	</div>
 </div>
 
@@ -166,7 +166,7 @@ $(document).ready(function() {
 	CreateWebSocket();
 	{% end %}
 	
-	$("#chatbar").css("width", $(".container").width()+"px");
+	$("#chatbar").css("width", $(".container>.row").width()+"px");
 	
 	var nickname = localStorage.getItem("nickname");
 	window.sendCoolDown = false;
