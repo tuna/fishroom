@@ -113,6 +113,45 @@ class ChatLogHandler(tornado.web.RequestHandler):
         return "%d" % (int(m.hexdigest()[:8], 16) & 0x07)
 
 
+class PostMessageHandler(tornado.web.RequestHandler):
+
+    def prepare(self):
+        if self.request.body:
+            try:
+                self.json_data = json.loads(self.request.body.decode('utf-8'))
+            except ValueError:
+                message = 'Unable to parse JSON.'
+                self.write_json(400, message=message)  # Bad Request
+                self.finish()
+
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+
+    def write_json(self, status_code, **kwargs):
+        self.write(json.dumps(kwargs))
+
+    def post(self, room):
+
+        content = self.json_data.get("content", None)
+        if not content:
+            self.write_json(400, msg="Cannot send empty message")
+
+        sender = self.json_data.get("nickname", None)
+        if not sender:
+            self.write_json(400, msg="Nickname must be set")
+
+        now = get_now()
+        date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
+        msg = Message(
+            ChannelType.Web, sender, room, content=content,
+            date=date, time=time, room=room
+        )
+
+        pr.publish(MessageBus.CHANNEL, msg.dumps())
+        self.write_json(200, msg="OK")
+        self.finish()
+
+
 class MessageStreamHandler(tornado.websocket.WebSocketHandler):
 
     def __init__(self, *args, **kwargs):

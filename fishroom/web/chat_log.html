@@ -37,8 +37,31 @@
 		</div>
 	</div>
 </div>
-
 {% end %}
+
+<div id="chatbar">
+	<div class="join-chat hidden">
+		<form class="form-inline">
+			<div class="form-group">
+				<label for="my-nickname">Nickname</label>
+				<input type="text" class="form-control" id="my-nickname" />
+			</div>
+			<span class="btn btn-primary" id="btn-set-nickname"> Join Chat </span>
+		</form>
+	</div>
+	<div class="send-text hidden">
+	<form>
+		<div class="form-group">
+			<label class="sr-only" for="my-msg-text"></label>
+			<div class="input-group">
+				<span class="input-group-addon"></span>
+				<input type="text" class="form-control" id="my-msg-text" />
+			</div>
+		</div>
+		<span class="btn btn-primary" id="btn-send-msg"> Send </span>
+	</form>
+	</div>
+</div>
 
 {% end %}
 
@@ -142,6 +165,65 @@ $(document).ready(function() {
 	
 	CreateWebSocket();
 	{% end %}
+	
+	$("#chatbar").css("width", $(".container").width()+"px");
+	
+	var nickname = localStorage.getItem("nickname");
+	window.sendCoolDown = false;
+	
+
+	if (!nickname) {
+		$(".join-chat").removeClass("hidden");
+	} else {
+		$(".send-text").removeClass("hidden").find(".input-group-addon").text(nickname);
+	}
+	
+	var set_nickname = function(){
+		nickname = $("input#my-nickname").val();
+		// console.log(nickname)
+		localStorage.setItem("nickname", nickname);
+		$(".join-chat").addClass("hidden");
+		$(".send-text").removeClass("hidden").find(".input-group-addon").text(nickname);
+	};
+	$("input#my-nickname").keypress(function(e){
+		if ((e.keyCode || e.which) == 13) {
+			set_nickname();
+			return false;
+		}
+	});
+	$('#btn-set-nickname').click(set_nickname);
+	
+	var send_fishmsg = function(){
+		if(window.sendCoolDown) {
+			return;
+		}
+
+		var msg = $("#my-msg-text").val(),
+				data = {nickname: nickname, content: msg};
+
+		$.ajax({
+			type: "POST",
+			url: "/messages/{{room}}/",
+			data: JSON.stringify(data),
+		}).done(function(msg){
+			$('#my-msg-text').val('');
+			$("#btn-send-msg").attr("disabled", "disabled");
+			window.sendCoolDown = true;
+			setTimeout(function(){
+				window.sendCoolDown = false;
+				$("#btn-send-msg").removeAttr("disabled");
+			}, 500);
+		});
+	};
+
+	$("input#my-msg-text").keypress(function(e){
+		if ((e.keyCode || e.which) == 13) {
+			send_fishmsg();
+			return false;
+		}
+	});
+	$('#btn-send-msg').click(send_fishmsg);
+
 });
 </script>
 {% end %}
@@ -150,6 +232,7 @@ $(document).ready(function() {
 <style>
 body>div.container {
 	max-width: 800px;
+	padding-bottom: 100px;
 }
 ul#logs {
 	font-size: 14px;
@@ -219,6 +302,13 @@ ul#logs .nick-color-7 {
 }
 #footer img {
 	max-height: 30px;
+}
+
+#chatbar {
+	position: fixed;
+	bottom: 0;
+	height: 100px;
+	background: white;
 }
 </style>
 

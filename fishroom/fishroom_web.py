@@ -3,7 +3,7 @@ import tornado.ioloop
 import tornado.web
 from .web.handlers import (
     DefaultHandler, TextStoreHandler, ChatLogHandler, MessageStreamHandler,
-    APILongPollingHandler, APIPostMessageHandler
+    PostMessageHandler, APILongPollingHandler, APIPostMessageHandler
 )
 from .config import config
 
@@ -14,6 +14,7 @@ def main():
         (r"/", DefaultHandler),
         (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)", ChatLogHandler),
         (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)/([0-9]+)", TextStoreHandler),
+        (r"/messages/([a-z0-9_-]+)/", PostMessageHandler),
         (r"/msg_stream", MessageStreamHandler),
         (r"/api/messages", APILongPollingHandler),
         (r"/api/messages/([a-z0-9_-]+)/", APIPostMessageHandler),
