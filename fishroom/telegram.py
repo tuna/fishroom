@@ -534,8 +534,6 @@ def TelegramThread(tg, bus):
     tele_me = [int(x) for x in config["telegram"]["me"]]
     try:
         for msg in tg.message_stream(id_blacklist=tele_me):
-            if msg.mtype == MessageType.Text:
-                continue
             bus.publish(msg)
     except:
         send_all("**Bug Trapped! Save Me!**")
