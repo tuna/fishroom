@@ -327,7 +327,7 @@ class Telegram(BaseBotInstance):
 
         elif "document" in jmsg:
             doc = jmsg["document"]
-            if doc["mime_type"].startswith("image/"):
+            if doc.get("mime_type", "").startswith("image/"):
                 url, err = self.upload_photo(doc["file_id"])
                 mtype = MessageType.Photo
             else:
