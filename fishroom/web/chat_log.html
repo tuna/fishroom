@@ -12,13 +12,17 @@
 				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{msg.time}}</span>
 				<span class="col-xs-12">
-					<span class="content">
-					{% if msg.mtype not in ("photo", "sticker", "audio") %}{% raw escape(msg.content).replace('\n', '<br />') %}{% end%}
+					<span class="content" data-msg-type="{{msg.mtype}}">
+					{% if msg.mtype not in ("photo", "sticker", "audio", "animation") %}{% raw escape(msg.content).replace('\n', '<br />') %}{% end%}
 					</span>
 					{% if msg.mtype in ("photo", "sticker") %}
 						<img class="thumbnail fishroom-{{msg.mtype}}" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
 					{% elif msg.mtype == "audio" %}
 						<audio class="fishroom-audio" controls><source src="{{msg.media_url}}" /></audio>
+					{% elif msg.mtype == "animation" %}
+						<video class="fishroom-video fishroom-animation" autoplay loop><source src="{{msg.media_url}}" /></video>
+					{% elif msg.mtype == "video" %}
+						<video class="fishroom-video" controls><source src="{{msg.media_url}}" /></video>
 					{% end %}
 				</span>
 			</li>
@@ -106,10 +110,16 @@ $(document).ready(function() {
 			else if (msg.mtype == "audio") {
 				return '<audio class="fishroom-audio" controls><source src="' + msg.media_url + '" /></audio>';
 			}
+			else if (msg.mtype == "animation") {
+				return '<video class="fishroom-video fishroom-animation" autoplay loop><source src="' + msg.media_url + '" /></video>';
+			}
+			else if (msg.mtype == "video") {
+				return '<video class="fishroom-video" controls><source src="' + msg.media_url + '" /></video>';
+			}
 			return "";
 		};
 		var _content = function(msg) {
-			if (msg.mtype == "photo" || msg.mtype == "sticker") {
+			if (msg.mtype == "photo" || msg.mtype == "sticker" || msg.mtype == "animation" || msg.mtype == "video") {
 				return "";
 			}
 			return convert(esc(msg.content));

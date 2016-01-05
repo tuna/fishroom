@@ -187,6 +187,8 @@ def ForwardingThread(channels, text_store):
             continue
 
         # Other Message
+
+        # msg from bot should be sent back to its channel
         if msg.botmsg:
             send_back = True
 

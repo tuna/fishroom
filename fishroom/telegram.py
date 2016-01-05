@@ -264,13 +264,14 @@ class Telegram(BaseBotInstance):
         self.sticker_url_store.set_sticker(m, url)
         return url, None
 
-    def upload_document(self, doc):
+    def upload_document(self, doc, filetype="file"):
         filedata = self.download_file(doc["file_id"])
         if filedata is None:
             return None, "teleboto Faild to download file"
 
         print("[Telegram] uploading document {}".format(doc["file_id"]))
-        url = self.file_store.upload_file(filedata, doc["file_name"])
+        url = self.file_store.upload_file(
+            filedata, doc["file_name"], filetype=filetype)
         if url is None:
             return None, "Failed to upload Document"
 
@@ -327,9 +328,21 @@ class Telegram(BaseBotInstance):
 
         elif "document" in jmsg:
             doc = jmsg["document"]
-            if doc.get("mime_type", "").startswith("image/"):
+            mime = doc.get("mime_type", "")
+            if mime.startswith("image/"):
                 url, err = self.upload_photo(doc["file_id"])
                 mtype = MessageType.Photo
+            elif mime.startswith("video/"):
+                if doc.get("file_size", 2**31) > 2*1024*1024:
+                    # print("[Telegram] video tooo large")
+                    err = "(Video larger than 2MB is toooo large to upload)"
+                    mtype = MessageType.Event
+                else:
+                    url, err = self.upload_document(doc, filetype="video")
+                    if doc["file_name"] in ("animation.gif.mp4", "giphy.mp4"):
+                        mtype = MessageType.Animation
+                    else:
+                        mtype = MessageType.Video
             else:
                 url, err = self.upload_document(doc)
                 mtype = MessageType.File
@@ -337,9 +350,7 @@ class Telegram(BaseBotInstance):
             if err is not None:
                 content = err
             else:
-                content = url + (
-                    " (file)" if mtype == MessageType.File else " (photo)"
-                )
+                content = "{url} ({mtype})".format(url=url, mtype=mtype)
                 media_url = url
 
         elif "voice" in jmsg:
