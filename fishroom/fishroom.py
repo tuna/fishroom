@@ -171,7 +171,7 @@ def ForwardingThread(channels, text_store):
             bot_msg = Message(
                 msg.channel, config.get("name", "bot"), msg.receiver,
                 content=bot_reply, date=msg.date, time=msg.time,
-                botmsg=True, opt=opt
+                botmsg=True, room=room, opt=opt
             )
             message_bus.publish(bot_msg)
 

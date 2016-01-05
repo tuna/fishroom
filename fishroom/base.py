@@ -14,6 +14,7 @@ class BaseBotInstance(object):
     def send_photo(self, target, photo_data):
         pass
 
+    @classmethod
     def is_cmd(self, content):
         if not (
             len(content) > 2

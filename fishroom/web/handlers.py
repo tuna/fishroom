@@ -9,9 +9,10 @@ import hashlib
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from ..db import get_redis as get_pyredis
+from ..base import BaseBotInstance
 from ..bus import MessageBus
 from ..helpers import get_now, tz
-from ..models import Message, ChannelType
+from ..models import Message, ChannelType, MessageType
 from ..chatlogger import ChatLogger
 from ..api_client import APIClientManager
 from ..config import config
@@ -152,9 +153,13 @@ class PostMessageHandler(tornado.web.RequestHandler):
 
         now = get_now()
         date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
+        mtype = MessageType.Command \
+            if BaseBotInstance.is_cmd(content) \
+            else MessageType.Text
+        print(mtype)
         msg = Message(
             ChannelType.Web, sender, room, content=content,
-            date=date, time=time, room=room
+            mtype=mtype, date=date, time=time, room=room
         )
 
         pr.publish(MessageBus.CHANNEL, msg.dumps())
