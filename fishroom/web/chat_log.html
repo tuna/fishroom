@@ -104,8 +104,15 @@ $(document).ready(function() {
 		el: "#logs",
 		data: fishLogData
 	});
-
+	
 	$.ajax({
+		url: function(){
+			var here = document.location.toString();
+			if (document.location.search){
+				return here + "&json=1";
+			}
+			return here + "?json=1";
+		}(),
 		type: "GET",
 		dataType: "json"
 	}).done(function(msgs){

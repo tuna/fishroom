@@ -88,8 +88,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
         logs = yield gen.Task(r.lrange, key, -limit, -1)
 
-        accept_types = self.request.headers.get("Accept", "").split(",")
-        if accept_types[0] == "application/json":
+        if self.get_argument("json", False):
             self.set_header("Content-Type", "application/json")
             self.write('[')
             self.write(','.join(logs))
