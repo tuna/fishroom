@@ -86,6 +86,16 @@ class ChatLogHandler(tornado.web.RequestHandler):
         limit = int(self.get_argument("limit", 15 if embedded else mlen))
 
         logs = yield gen.Task(r.lrange, key, -limit, -1)
+
+        accept_types = self.request.headers.get("Accept", "").split(",")
+        if accept_types[0] == "application/json":
+            self.set_header("Content-Type", "application/json")
+            self.write('[')
+            self.write(','.join(logs))
+            self.write(']')
+            self.finish()
+            return
+
         msgs = [Message.loads(msg) for msg in logs]
         for msg in msgs:
             if msg is None:

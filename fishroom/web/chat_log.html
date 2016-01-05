@@ -6,65 +6,56 @@
 	<div class="col-md-12">
 		{% if not embedded %} <h3>{{title}}</h3> {% end %}
 		<ul id="logs">
-			{% for id, msg in enumerate(msgs, next_id-limit) %}
-			{% if msg %}
-			<li class="row" data-id="{{id}}">
-				<span class="nickname col-xs-6 nick-color-{{msg.name_style_num}}">{{msg.sender}}</span>
-				<span class="time col-xs-6 text-right">{{msg.time}}</span>
+			<li class="row" data-id="{{!start_id + $index}}" v-for="msg in msgs">
+				<span class="nickname col-xs-6 nick-color-{{!msg.sender|colorNum}}">{{!msg.sender}}</span>
+				<span class="time col-xs-6 text-right">{{!msg.time}}</span>
 				<span class="col-xs-12">
-					<span class="content" data-msg-type="{{msg.mtype}}">
-					{% if msg.mtype not in ("photo", "sticker", "audio", "animation") %}{% raw escape(msg.content).replace('\n', '<br />') %}{% end%}
+					<span class="content" data-msg-type="{{!msg.mtype}}">
+						<span v-if="!(msg.mtype=='photo'||msg.mtype=='sticker'||msg.mtype=='animation'||msg.mtype=='video')">{{{! msg.content | fishify }}}</span>
+						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" :src="msg.media_url" />
+						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source :src="msg.media_url" /></audio>
+						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop><source :src="msg.media_url" /></video>
+						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source :src="msg.media_url" /></video>
 					</span>
-					{% if msg.mtype in ("photo", "sticker") %}
-						<img class="thumbnail fishroom-{{msg.mtype}}" src="{% if msg.media_url %}{{ msg.media_url }}{% else %}{{msg.content.split()[0]}}{% end %}" />
-					{% elif msg.mtype == "audio" %}
-						<audio class="fishroom-audio" controls><source src="{{msg.media_url}}" /></audio>
-					{% elif msg.mtype == "animation" %}
-						<video class="fishroom-video fishroom-animation" autoplay loop><source src="{{msg.media_url}}" /></video>
-					{% elif msg.mtype == "video" %}
-						<video class="fishroom-video" controls><source src="{{msg.media_url}}" /></video>
-					{% end %}
 				</span>
 			</li>
-			{% end %}
-			{% end %}
 		</ul>
 	</div>
 </div>
 
-{% if not embedded %}
-<div class="row" id="footer">
-	<div class="col-md-12">
-		<div class="text-center">
-			<span>Powered by <a href="https://github.com/tuna/fishroom">Fishroom</a> </span>| <span>Licensed under AGPLv3</span>
-			{% if 'sponsor' in fishroom.config.config %} | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span>{% end %}
-		</div>
-	</div>
-</div>
-{% end %}
 
 <div id="chatbar" class="row">
-	<div class="join-chat hidden">
-		<form class="form-inline">
+	<div class="join-chat" v-show="!nickname">
+		<form class="form-inline" @submit="setNickname">
 			<div class="form-group">
 				<label for="my-nickname">Nickname</label>
-				<input type="text" class="form-control" id="my-nickname" />
+				<input type="text" class="form-control" v-model="nickname_i"/>
 			</div>
-			<span class="btn btn-primary" id="btn-set-nickname"> Join Chat </span>
+			<span class="btn btn-primary" @click="setNickname"> Join Chat </span>
 		</form>
 	</div>
-	<div class="send-text hidden">
-		<form>
+	<div class="send-text" v-show="nickname">
+		<form @submit="sendFishMsg">
 			<div class="form-group">
 				<label class="sr-only" for="my-msg-text"></label>
 				<div class="input-group">
-					<span class="input-group-addon"></span>
-					<input type="text" class="form-control" id="my-msg-text" />
+					<span class="input-group-addon">{{!nickname}}</span>
+					<input type="text" class="form-control" v-model="msg_text" />
 				</div>
 			</div>
-			<span class="btn btn-primary" id="btn-send-msg"> Send </span>
+			<span class="btn btn-primary" @click="sendFishMsg" :disabled="coolDown"> Send </span>
+			<a href="https://img.vim-cn.com/" target=":blank" @click="addImagePrefix" class="btn btn-default" > Picture </a>
+			<span class="btn btn-default" @click="unsetNickname" > Reset Nickname </span>
 		</form>
 	</div>
+	{% if not embedded %}
+	<div id="footer">
+			<div class="text-center">
+				<span>Powered by <a href="https://github.com/tuna/fishroom">Fishroom</a> </span>| <span>Licensed under AGPLv3</span>
+				{% if 'sponsor' in fishroom.config.config %} | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span>{% end %}
+			</div>
+	</div>
+	{% end %}
 </div>
 
 {% end %}
@@ -85,65 +76,42 @@ $(document).ready(function() {
 		}
 		return getColorNum_;
 	}();
-
-	var esc = function(content) {
-		return 	content
-						.replace(/</g, '&lt')
-						.replace(/>/g, '&gt')
+	
+	Vue.filter('colorNum', function(text){
+		return getColorNum(text);
+	});
+	
+	Vue.filter('fishify', function(text){
+		var urlRegex = /(https?:\/\/[^\s]+)/g;
+		return emojione.toImage(
+				text
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
 						.replace(/(?:\r\n|\r|\n)/g, '<br/>')
-	};
-
-	var convert = function(content){
-		var urlify = function(text) {
-			var urlRegex = /(https?:\/\/[^\s]+)/g;
-			return text.replace(urlRegex, '<a href="$1">$1</a>')
-		}
-		return emojione.toImage(urlify(content));
-	};
-
-	var new_message = function() {
-		var next_id = {{next_id}};
-		var _thumb = function(msg) {
-			if (msg.mtype == "photo" || msg.mtype == "sticker") {
-				return '<img class="thumbnail fishroom-' + msg.mtype + '" src="' + msg.media_url + '" />';
-			}
-			else if (msg.mtype == "audio") {
-				return '<audio class="fishroom-audio" controls><source src="' + msg.media_url + '" /></audio>';
-			}
-			else if (msg.mtype == "animation") {
-				return '<video class="fishroom-video fishroom-animation" autoplay loop><source src="' + msg.media_url + '" /></video>';
-			}
-			else if (msg.mtype == "video") {
-				return '<video class="fishroom-video" controls><source src="' + msg.media_url + '" /></video>';
-			}
-			return "";
-		};
-		var _content = function(msg) {
-			if (msg.mtype == "photo" || msg.mtype == "sticker" || msg.mtype == "animation" || msg.mtype == "video") {
-				return "";
-			}
-			return convert(esc(msg.content));
-		};
-		function _new_message(msg) {
-			$("ul#logs").append(
-					'<li class="row" data-id="' + next_id + '">' + 
-					'<span class="nickname col-xs-6 nick-color-' + getColorNum(msg.sender) + '">' + msg.sender + '</span>' +
-					'<span class="time col-xs-6 text-right">' + msg.time + '</span>'	+
-					'<span class="col-xs-12">' + 
-						'<span class="content ">' + _content(msg) + '</span>' + _thumb(msg) +
-					'</span>' +
-					'</li>'
-					);
-			next_id++;
-		}
-		return _new_message;
-	}();
-
-	$("#logs > li").each(function(i, e){
-		var content = $(e).find(".content");
-		content.html(convert(content.html()));
+						.replace(urlRegex, '<a href="$1">$1</a>')
+		);
 	});
 
+	var fishLogData = {
+		start_id: {{next_id}},
+		msgs: []
+	}
+	window.new_message = function(msg) {
+		fishLogData.msgs.push(msg);
+	}
+
+	var fishLogVue = new Vue({
+		el: "#logs",
+		data: fishLogData
+	});
+
+	$.ajax({
+		type: "GET",
+		dataType: "json"
+	}).done(function(msgs){
+		fishLogData.msgs = msgs;
+	});
+	
 	{% if enable_ws %}
 	window.CreateWebSocket = function() {
 		var scheme=document.location.protocol.replace(/^http/g, 'ws'), 
@@ -162,7 +130,7 @@ $(document).ready(function() {
 				var msg = JSON.parse(ev.data);
 				// console.log(msg);
 				new_message(msg);
-				window.scrollTo(0,document.body.scrollHeight);
+				window.scrollTo(0, document.body.scrollHeight);
 			}
 		};
 		ws.onclose = function(ev) {
@@ -176,63 +144,51 @@ $(document).ready(function() {
 	CreateWebSocket();
 	{% end %}
 	
+	{# chatbar #}
 	$("#chatbar").css("width", $(".container>.row").width()+"px");
 	
-	var nickname = localStorage.getItem("nickname");
-	window.sendCoolDown = false;
-	
-
-	if (!nickname) {
-		$(".join-chat").removeClass("hidden");
-	} else {
-		$(".send-text").removeClass("hidden").find(".input-group-addon").text(nickname);
+	var chatData = {
+		nickname: localStorage.getItem("nickname"),
+		nickname_i: "",
+		msg_text: "",
+		coolDown: false
 	}
-	
-	var set_nickname = function(){
-		nickname = $("input#my-nickname").val();
-		// console.log(nickname)
-		localStorage.setItem("nickname", nickname);
-		$(".join-chat").addClass("hidden");
-		$(".send-text").removeClass("hidden").find(".input-group-addon").text(nickname);
-	};
-	$("input#my-nickname").keypress(function(e){
-		if ((e.keyCode || e.which) == 13) {
-			set_nickname();
-			return false;
+	var chatVue = new Vue({
+		el: "#chatbar",
+		data: chatData,
+		methods: {
+			setNickname: function(ev){
+				this.nickname = this.nickname_i;
+				this.nickname_i = "";
+				localStorage.setItem("nickname", this.nickname);
+				ev.preventDefault();
+			},
+			unsetNickname: function(ev) {
+				this.nickname = "";
+				ev.preventDefault();
+			},
+			addImagePrefix: function() {
+				if (this.msg_text == "") {
+					this.msg_text = "/imglink ";	
+				}
+			},
+			sendFishMsg: function(ev){
+				var data = {nickname: this.nickname, content: this.msg_text};
+				$.ajax({
+					type: "POST",
+					url: "/messages/{{room}}/",
+					data: JSON.stringify(data),
+				}).done(function(msg) {
+					chatData.coolDown = true;
+					chatData.msg_text = "";
+					setTimeout(function(){
+						chatData.coolDown = false;
+					}, 500);
+				});
+				ev.preventDefault();
+			}
 		}
 	});
-	$('#btn-set-nickname').click(set_nickname);
-	
-	var send_fishmsg = function(){
-		if(window.sendCoolDown) {
-			return;
-		}
-
-		var msg = $("#my-msg-text").val(),
-				data = {nickname: nickname, content: msg};
-
-		$.ajax({
-			type: "POST",
-			url: "/messages/{{room}}/",
-			data: JSON.stringify(data),
-		}).done(function(msg){
-			$('#my-msg-text').val('');
-			$("#btn-send-msg").attr("disabled", "disabled");
-			window.sendCoolDown = true;
-			setTimeout(function(){
-				window.sendCoolDown = false;
-				$("#btn-send-msg").removeAttr("disabled");
-			}, 500);
-		});
-	};
-
-	$("input#my-msg-text").keypress(function(e){
-		if ((e.keyCode || e.which) == 13) {
-			send_fishmsg();
-			return false;
-		}
-	});
-	$('#btn-send-msg').click(send_fishmsg);
 
 });
 </script>
@@ -242,7 +198,6 @@ $(document).ready(function() {
 <style>
 body>div.container {
 	max-width: 800px;
-	padding-bottom: 100px;
 }
 ul#logs {
 	font-size: 14px;
@@ -250,6 +205,7 @@ ul#logs {
 	font-family: monospace;
 	padding-left: 0;
 	padding-top: 10px;
+	margin-bottom: 240px;
 }
 ul#logs > li {
 	padding-top: 7px;
@@ -275,7 +231,7 @@ ul#logs > li img.thumbnail {
 	max-height: 300px;
 	max-width: 100%;
 }
-ul#logs > li audio.fishroom-audio, ul#logs > li video.fishroom-animation, ul#logs > li video.fishroom-video  {
+ul#logs > li audio.fishroom-audio, ul#logs > li video.fishroom-video  {
 	margin-top: 5px;
 }
 ul#logs > li img.thumbnail.fishroom-sticker {
@@ -308,16 +264,17 @@ ul#logs .nick-color-7 {
 }
 
 #footer {
-	padding: 40px 0;
+	height: 30px;
 }
 #footer img {
 	max-height: 30px;
 }
 
 #chatbar {
+	padding: 5px 5px;
 	position: fixed;
 	bottom: 0;
-	height: 100px;
+	height: 130px;
 	background: white;
 }
 </style>
