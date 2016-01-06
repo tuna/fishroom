@@ -43,7 +43,7 @@
 					<input type="text" class="form-control" v-model="msg_text" />
 				</div>
 			</div>
-			<span class="btn btn-primary" @click="sendFishMsg" :disabled="coolDown"> Send </span>
+			<span class="btn btn-primary" @click="sendFishMsg" :disabled="(coolDown||msg_text=='')"> Send </span>
 			<a href="https://img.vim-cn.com/" target=":blank" @click="addImagePrefix" class="btn btn-default" > Picture </a>
 			<span class="btn btn-default" @click="unsetNickname" > Reset Nickname </span>
 		</form>
@@ -180,13 +180,16 @@ $(document).ready(function() {
 				}
 			},
 			sendFishMsg: function(ev){
+				if (this.coolDown || this.msg_text == '') {
+					return;
+				}
+				chatData.coolDown = true;
 				var data = {nickname: this.nickname, content: this.msg_text};
 				$.ajax({
 					type: "POST",
 					url: "/messages/{{room}}/",
 					data: JSON.stringify(data),
 				}).done(function(msg) {
-					chatData.coolDown = true;
 					chatData.msg_text = "";
 					setTimeout(function(){
 						chatData.coolDown = false;
