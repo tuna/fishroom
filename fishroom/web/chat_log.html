@@ -15,7 +15,7 @@
 			<h3><i class="glyphicon glyphicon-refresh"></i> Loading ...</h3>
 		</div>
 		{% if not embedded %}
-		<div class="text-center" v-show="start_id != 0">
+		<div class="text-center" v-show="(loaded && start_id != 0)">
 			<span class="btn btn-success" @click="fetchMore">Load More</span>
 		</div>
 		{% end %}
@@ -158,7 +158,7 @@ $(document).ready(function() {
 		el: "#fishlog",
 		data: fishLogData,
 		ready: function() {
-			var limit = 128;
+			var limit = 64;
 			if (document.location.search) {
 				var query = location.search.substr(1);
 				query.split('&').forEach(function(part){
