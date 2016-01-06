@@ -51,7 +51,7 @@
 					<label for="my-nickname">Nickname</label>
 					<input type="text" class="form-control" v-model="nickname_i"/>
 				</div>
-				<span class="btn btn-primary" @click="setNickname"> Join Chat </span>
+				<span class="btn btn-primary" @click="setNickname" :disabled="nickname_i==''"> Join Chat </span>
 			</form>
 		</div>
 		<div class="send-text" v-show="nickname">
@@ -229,10 +229,13 @@ $(document).ready(function() {
 		data: chatData,
 		methods: {
 			setNickname: function(ev){
+				ev.preventDefault();
+				if (! this.nickname_i) {
+					return;
+				}
 				this.nickname = this.nickname_i;
 				this.nickname_i = "";
 				localStorage.setItem("nickname", this.nickname);
-				ev.preventDefault();
 			},
 			unsetNickname: function(ev) {
 				this.nickname = "";
@@ -253,8 +256,14 @@ $(document).ready(function() {
 					type: "POST",
 					url: "/messages/{{room}}/",
 					data: JSON.stringify(data),
+					dataType: 'json'
 				}).done(function(msg) {
 					chatData.msg_text = "";
+				}).fail(function(xhr) {
+					if (xhr.status == 400) {
+						alert(xhr.responseJSON.msg);
+					}
+				}).always(function(){
 					setTimeout(function(){
 						chatData.coolDown = false;
 					}, 500);

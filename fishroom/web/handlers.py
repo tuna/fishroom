@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 import tornado.web
 import tornado.websocket
 import tornado.gen as gen
@@ -124,30 +125,38 @@ class ChatLogHandler(tornado.web.RequestHandler):
 
 class PostMessageHandler(tornado.web.RequestHandler):
 
-    def prepare(self):
-        if self.request.body:
-            try:
-                self.json_data = json.loads(self.request.body.decode('utf-8'))
-            except ValueError:
-                message = 'Unable to parse JSON.'
-                self.write_json(400, message=message)  # Bad Request
-                self.finish()
-
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
 
     def write_json(self, status_code, **kwargs):
+        self.set_status(status_code)
         self.write(json.dumps(kwargs))
 
     def post(self, room):
+        try:
+            self.json_data = json.loads(self.request.body.decode('utf-8'))
+        except ValueError:
+            message = 'Unable to parse JSON.'
+            self.write_json(400, message=message)  # Bad Request
+            self.finish()
+            return
 
         content = self.json_data.get("content", None)
         if not content:
             self.write_json(400, msg="Cannot send empty message")
+            self.finish()
+            return
 
-        sender = self.json_data.get("nickname", None)
+        sender = str(self.json_data.get("nickname", '').strip())
         if not sender:
             self.write_json(400, msg="Nickname must be set")
+            self.finish()
+            return
+        if not re.match(r'^\w', sender, flags=re.UNICODE):
+            self.write_json(
+                400, msg="Invalid char found, use a human's nickname instead!")
+            self.finish()
+            return
 
         now = get_now()
         date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
