@@ -3,9 +3,12 @@
 {% block content %}
 
 <div class="row">
-	<div class="col-md-12">
+	<div class="col-md-12" id="fishlog">
 		{% if not embedded %} <h3>{{title}}</h3> {% end %}
-		<ul id="logs">
+		<div class="text-center" v-show="!loaded">
+			<h3><i class="glyphicon glyphicon-refresh"></i> Loading ...</h3>
+		</div>
+		<ul id="logs" v-show="loaded">
 			<li class="row" data-id="{{!start_id + $index}}" v-for="msg in msgs">
 				<span class="nickname col-xs-6 nick-color-{{!msg.sender|colorNum}}">{{!msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{!msg.time}}</span>
@@ -94,6 +97,7 @@ $(document).ready(function() {
 
 	var fishLogData = {
 		start_id: {{next_id}},
+		loaded: false,
 		msgs: []
 	}
 	window.new_message = function(msg) {
@@ -101,7 +105,7 @@ $(document).ready(function() {
 	}
 
 	var fishLogVue = new Vue({
-		el: "#logs",
+		el: "#fishlog",
 		data: fishLogData
 	});
 	
@@ -116,6 +120,7 @@ $(document).ready(function() {
 		type: "GET",
 		dataType: "json"
 	}).done(function(msgs){
+		fishLogData.loaded = true;
 		fishLogData.msgs = msgs;
 	});
 	
