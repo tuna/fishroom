@@ -75,7 +75,7 @@ $(document).ready(function() {
 				return cache[str];
 			}
 			var frag = parseInt(md5(str).substr(0, 8), 16);
-			return frag & 0x07;
+			return frag & 0x0f;
 		}
 		return getColorNum_;
 	}();
@@ -253,31 +253,7 @@ ul#logs > li img.thumbnail.fishroom-sticker {
 	max-width: 200px;
 	border: none;
 }
-ul#logs .nick-color-0 {
-	color: #F89406;
-}
-ul#logs .nick-color-1 {
-	color: #9A12B3;
-}
-ul#logs .nick-color-2 {
-	color: #4183D7;
-}
-ul#logs .nick-color-3 {
-	color: #00B16A;
-}
-ul#logs .nick-color-4 {
-	color: #F9690E;
-}
-ul#logs .nick-color-5 {
-	color: #D2527F;
-}
-ul#logs .nick-color-6 {
-	color: #1BA39C;
-}
-ul#logs .nick-color-7 {
-	color: #1F3A93;
-}
-
+{% include nickcolors.css %}
 #footer {
 	height: 30px;
 }
