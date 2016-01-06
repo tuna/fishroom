@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<div class="row">
-	<div class="col-md-2"></div>
-	<div class="col-md-8">
-		<div class="panel panel-primary">
-			<div class="panel-heading">
-				<span> {{title}} </span>
-				<span class="pull-right hidden-xs"> {{time}}</span>
-				<span class="visible-xs"> {{time}}</span>
-			</div>
-			<div class="panel-body" id="text-content">
-				{{ escape(content).replace('\n', '<br />') }}
+<div class="container">
+	<div class="row">
+		<div class="col-md-2"></div>
+		<div class="col-md-8">
+			<div class="panel panel-primary">
+				<div class="panel-heading">
+					<span> {{title}} </span>
+					<span class="pull-right hidden-xs"> {{time}}</span>
+					<span class="visible-xs"> {{time}}</span>
+				</div>
+				<div class="panel-body" id="text-content">
+					{{ escape(content).replace('\n', '<br />') }}
+				</div>
 			</div>
 		</div>
+		<div class="col-md-2"></div>
 	</div>
-	<div class="col-md-2"></div>
 </div>
-
 {% end %}
 
 {% block css %}

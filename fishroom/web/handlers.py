@@ -88,7 +88,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
         last = int(self.get_argument("last", mlen)) - 1
         limit = int(self.get_argument("limit", 15 if embedded else mlen))
 
-        start = last - limit + 1
+        start = max(last - limit + 1, 0)
 
         if self.get_argument("json", False):
             logs = yield gen.Task(r.lrange, key, start, last)

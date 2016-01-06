@@ -2,23 +2,34 @@
 
 {% block content %}
 
+<div id="titlebar">
+	<div class="container">
+		<h3>{{title}}</h3>
+	</div>
+</div>
+
+<div class="container" id="fishlog">
 <div class="row">
-	<div class="col-md-12" id="fishlog">
-		{% if not embedded %} <h3>{{title}}</h3> {% end %}
+	<div class="col-md-12">
 		<div class="text-center" v-show="!loaded">
 			<h3><i class="glyphicon glyphicon-refresh"></i> Loading ...</h3>
 		</div>
+		{% if not embedded %}
+		<div class="text-center" v-show="start_id != 0">
+			<span class="btn btn-success" @click="fetchMore">Load More</span>
+		</div>
+		{% end %}
 		<ul id="logs" v-show="loaded">
-			<li class="row" data-id="{{!msg.id}}" v-for="msg in msgs">
+			<li class="row" data-id="{{!msg.id}}" v-for="msg in msgs" track-by="id">
 				<span class="nickname col-xs-6 nick-color-{{!msg.sender|colorNum}}">{{!msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{!msg.time}}</span>
 				<span class="col-xs-12">
 					<span class="content" data-msg-type="{{!msg.mtype}}">
 						<span v-if="!(msg.mtype=='photo'||msg.mtype=='sticker'||msg.mtype=='animation'||msg.mtype=='video')">{{{! msg.content | fishify }}}</span>
-						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" :src="msg.media_url" />
-						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source :src="msg.media_url" /></audio>
-						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop><source :src="msg.media_url" /></video>
-						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source :src="msg.media_url" /></video>
+						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" src='' :src="msg.media_url" />
+						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source src='' :src="msg.media_url" /></audio>
+						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop><source src='' :src="msg.media_url" /></video>
+						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source src='' :src="msg.media_url" /></video>
 					</span>
 				</span>
 				<span class="msg-channel col-xs-12 text-right">
@@ -28,40 +39,42 @@
 		</ul>
 	</div>
 </div>
+</div>
 
-
-<div id="chatbar" class="row">
-	<div class="join-chat" v-show="!nickname">
-		<form class="form-inline" @submit="setNickname">
-			<div class="form-group">
-				<label for="my-nickname">Nickname</label>
-				<input type="text" class="form-control" v-model="nickname_i"/>
-			</div>
-			<span class="btn btn-primary" @click="setNickname"> Join Chat </span>
-		</form>
-	</div>
-	<div class="send-text" v-show="nickname">
-		<form @submit="sendFishMsg">
-			<div class="form-group">
-				<label class="sr-only" for="my-msg-text"></label>
-				<div class="input-group">
-					<span class="input-group-addon">{{!nickname}}</span>
-					<input type="text" class="form-control" v-model="msg_text" />
+<div id="chatbar">
+	<div class="container">
+		<div class="join-chat" v-show="!nickname">
+			<form class="form-inline" @submit="setNickname">
+				<div class="form-group">
+					<label for="my-nickname">Nickname</label>
+					<input type="text" class="form-control" v-model="nickname_i"/>
 				</div>
-			</div>
-			<span class="btn btn-primary" @click="sendFishMsg" :disabled="(coolDown||msg_text=='')"> Send </span>
-			<a href="https://img.vim-cn.com/" target=":blank" @click="addImagePrefix" class="btn btn-default" > Picture </a>
-			<span class="btn btn-default" @click="unsetNickname" > Reset Nickname </span>
-		</form>
+				<span class="btn btn-primary" @click="setNickname"> Join Chat </span>
+			</form>
+		</div>
+		<div class="send-text" v-show="nickname">
+			<form @submit="sendFishMsg">
+				<div class="form-group">
+					<label class="sr-only" for="my-msg-text"></label>
+					<div class="input-group">
+						<span class="input-group-addon">{{!nickname}}</span>
+						<input type="text" class="form-control" v-model="msg_text" />
+					</div>
+				</div>
+				<span class="btn btn-primary" @click="sendFishMsg" :disabled="(coolDown||msg_text=='')"> Send </span>
+				<a href="https://img.vim-cn.com/" target=":blank" @click="addImagePrefix" class="btn btn-default" > Picture </a>
+				<span class="btn btn-default" @click="unsetNickname" > Reset Nickname </span>
+			</form>
+		</div>
+		{% if not embedded %}
+		<div id="footer">
+				<div class="text-center">
+					<span>Powered by <a href="https://github.com/tuna/fishroom">Fishroom</a> </span>| <span>Licensed under AGPLv3</span>
+					{% if 'sponsor' in fishroom.config.config %} | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span>{% end %}
+				</div>
+		</div>
+		{% end %}
 	</div>
-	{% if not embedded %}
-	<div id="footer">
-			<div class="text-center">
-				<span>Powered by <a href="https://github.com/tuna/fishroom">Fishroom</a> </span>| <span>Licensed under AGPLv3</span>
-				{% if 'sponsor' in fishroom.config.config %} | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span>{% end %}
-			</div>
-	</div>
-	{% end %}
 </div>
 
 {% end %}
@@ -99,32 +112,66 @@ $(document).ready(function() {
 	});
 
 	var fishLogData = {
-		start_id: {{next_id}},
+		start_id: -1,
+		fetchLimit: 10,
 		loaded: false,
 		msgs: []
 	}
 	window.new_message = function(msg) {
 		fishLogData.msgs.push(msg);
 	}
+	
+	var fetchLog = function(limit, lastId, scrollDown) {
+		var here = document.location.toString().split('?')[0];
+		limit = typeof limit !== 'undefined' ? limit : 10;
+		scrollDown = typeof scrollDown !== 'undefined' ? scrollDown : true;
+		
+		var params = {'json': 1, 'limit': limit};
+		if(typeof lastId !== 'undefined') {
+			params['last'] = lastId;
+		}
+		params = $.param(params);
+		var url = here + '?' + params;
+		console.log(url);
+		$.ajax({
+			url: url,
+			type: "GET",
+			dataType: "json"
+		}).done(function(msgs){
+			fishLogData.loaded = true;
+			fishLogData.msgs = msgs.concat(fishLogData.msgs);
+			if(msgs.length > 0) {
+				fishLogData.start_id = msgs[0].id;
+			}
+			if(scrollDown) {
+				setTimeout(function(){
+						window.scrollTo(0, document.body.scrollHeight)
+				}, 100);
+			}
+		});
+	}
 
 	var fishLogVue = new Vue({
 		el: "#fishlog",
-		data: fishLogData
-	});
-	
-	$.ajax({
-		url: function(){
-			var here = document.location.toString();
-			if (document.location.search){
-				return here + "&json=1";
+		data: fishLogData,
+		ready: function() {
+			var limit = 128;
+			if (document.location.search) {
+				var query = location.search.substr(1);
+				query.split('&').forEach(function(part){
+					var item = part.split('=');
+					if (item[0]=="limit") {
+						limit = parseInt(item[1]);
+					}
+				});
 			}
-			return here + "?json=1";
-		}(),
-		type: "GET",
-		dataType: "json"
-	}).done(function(msgs){
-		fishLogData.loaded = true;
-		fishLogData.msgs = msgs;
+			fetchLog(limit);
+		},
+		methods: {
+			fetchMore: function() {
+				fetchLog(42, this.start_id, false);
+			}
+		}
 	});
 	
 	{% if enable_ws %}
@@ -160,7 +207,7 @@ $(document).ready(function() {
 	{% end %}
 	
 	{# chatbar #}
-	$("#chatbar").css("width", $(".container>.row").width()+"px");
+	// $("#chatbar").css("width", $(".container>.row").width()+"px");
 	
 	var chatData = {
 		nickname: localStorage.getItem("nickname"),
@@ -214,15 +261,17 @@ $(document).ready(function() {
 
 {% block css %}
 <style>
-body>div.container {
+.container {
 	max-width: 800px;
+}
+#fishlog {
+	padding-top: 80px;
 }
 ul#logs {
 	font-size: 14px;
 	list-style-type: none;
 	font-family: monospace;
 	padding-left: 0;
-	padding-top: 10px;
 	margin-bottom: 240px;
 }
 ul#logs > li {
@@ -268,12 +317,26 @@ ul#logs > li img.thumbnail.fishroom-sticker {
 	max-height: 30px;
 }
 
+#titlebar {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	background: white;
+	z-index: 1000;
+}
+#titlebar > .container {
+	border-bottom: solid 1px #eee;
+}
 #chatbar {
-	padding: 5px 5px;
 	position: fixed;
 	bottom: 0;
 	height: 130px;
 	background: white;
+	width: 100%;
+}
+#chatbar > .container {
+	padding-top: 15px;
+	border-top: solid 1px #eee;
 }
 </style>
 
