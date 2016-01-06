@@ -2,11 +2,13 @@
 
 {% block content %}
 
+{% if not embedded %}
 <div id="titlebar">
 	<div class="container">
 		<h3>{{title}}</h3>
 	</div>
 </div>
+{% end %}
 
 <div class="container" id="fishlog">
 <div class="row">
@@ -271,9 +273,11 @@ $(document).ready(function() {
 .container {
 	max-width: 800px;
 }
+{% if not embedded %}
 #fishlog {
 	padding-top: 80px;
 }
+{% end %}
 ul#logs {
 	font-size: 14px;
 	list-style-type: none;
