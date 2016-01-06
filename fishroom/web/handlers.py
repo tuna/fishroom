@@ -86,21 +86,14 @@ class ChatLogHandler(tornado.web.RequestHandler):
         embedded = self.get_argument("embedded", None)
         limit = int(self.get_argument("limit", 15 if embedded else mlen))
 
-        logs = yield gen.Task(r.lrange, key, -limit, -1)
-
         if self.get_argument("json", False):
+            logs = yield gen.Task(r.lrange, key, -limit, -1)
             self.set_header("Content-Type", "application/json")
             self.write('[')
             self.write(','.join(logs))
             self.write(']')
             self.finish()
             return
-
-        msgs = [Message.loads(msg) for msg in logs]
-        for msg in msgs:
-            if msg is None:
-                continue
-            msg.name_style_num = self.name_style_num(msg.sender)
 
         baseurl = config["baseurl"]
         p = urlparse(baseurl)
@@ -109,7 +102,6 @@ class ChatLogHandler(tornado.web.RequestHandler):
             "chat_log.html",
             title="#{room} @ {date}".format(
                 room=room, date=date),
-            msgs=msgs,
             next_id=mlen,
             enable_ws=enable_ws,
             room=room,
