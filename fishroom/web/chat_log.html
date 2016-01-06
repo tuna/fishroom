@@ -9,7 +9,7 @@
 			<h3><i class="glyphicon glyphicon-refresh"></i> Loading ...</h3>
 		</div>
 		<ul id="logs" v-show="loaded">
-			<li class="row" data-id="{{!start_id + $index}}" v-for="msg in msgs">
+			<li class="row" data-id="{{!msg.id}}" v-for="msg in msgs">
 				<span class="nickname col-xs-6 nick-color-{{!msg.sender|colorNum}}">{{!msg.sender}}</span>
 				<span class="time col-xs-6 text-right">{{!msg.time}}</span>
 				<span class="col-xs-12">

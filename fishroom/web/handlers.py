@@ -80,18 +80,25 @@ class ChatLogHandler(tornado.web.RequestHandler):
             self.finish("Dark History Coverred")
             return
 
+        embedded = self.get_argument("embedded", None)
+
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
         mlen = yield gen.Task(r.llen, key)
 
-        embedded = self.get_argument("embedded", None)
+        last = int(self.get_argument("last", mlen)) - 1
         limit = int(self.get_argument("limit", 15 if embedded else mlen))
 
+        start = last - limit + 1
+
         if self.get_argument("json", False):
-            logs = yield gen.Task(r.lrange, key, -limit, -1)
+            logs = yield gen.Task(r.lrange, key, start, last)
+            msgs = [json.loads(jmsg) for jmsg in logs]
+            for i, m in zip(range(start, last+1), msgs):
+                m['id'] = i
+                m.pop('opt')
+                m.pop('receiver')
             self.set_header("Content-Type", "application/json")
-            self.write('[')
-            self.write(','.join(logs))
-            self.write(']')
+            self.write(json.dumps(msgs))
             self.finish()
             return
 
