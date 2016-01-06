@@ -113,11 +113,14 @@ $(document).ready(function() {
 
 	var fishLogData = {
 		start_id: -1,
+		current_id: {{next_id}},
 		fetchLimit: 10,
 		loaded: false,
 		msgs: []
 	}
 	window.new_message = function(msg) {
+		msg.id = fishLogData.current_id;
+		fishLogData.current_id++;
 		fishLogData.msgs.push(msg);
 	}
 	
