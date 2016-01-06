@@ -192,7 +192,11 @@ $(document).ready(function() {
 				var msg = JSON.parse(ev.data);
 				// console.log(msg);
 				new_message(msg);
-				window.scrollTo(0, document.body.scrollHeight);
+				var b = document.body, d = document.documentElement;
+				if(b.scrollHeight - (d.scrollTop + d.clientHeight) < 20) {
+					console.log(b.scrollHeight - (d.scrollTop + d.clientHeight));
+					window.scrollTo(0, document.body.scrollHeight);
+				}
 			}
 		};
 		ws.onclose = function(ev) {
