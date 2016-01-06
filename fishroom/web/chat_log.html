@@ -21,6 +21,9 @@
 						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source :src="msg.media_url" /></video>
 					</span>
 				</span>
+				<span class="msg-channel col-xs-12 text-right">
+					via {{!msg.channel}}
+				</span>
 			</li>
 		</ul>
 	</div>
@@ -236,6 +239,10 @@ ul#logs > li:first-child {
 }
 ul#logs > li > span.time {
 	color: #888;
+}
+ul#logs > li > span.msg-channel {
+	color: #888;
+	font-size: .9em;
 }
 ul#logs > li span.content {
 	font-family: 'Source Han Sans CN', 'WenQuanYi Zen Hei', 'WenQuanYi Micro Hei', 'Heiti SC', 'Hiragino Sans GB', 'STHeiti', '微软雅黑', sans-serif;
