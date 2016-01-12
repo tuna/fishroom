@@ -198,8 +198,8 @@ $(document).ready(function() {
 				// console.log(msg);
 				new_message(msg);
 				var b = document.body, d = document.documentElement;
-				if(b.scrollHeight - (d.scrollTop + d.clientHeight) < 20) {
-					console.log(b.scrollHeight - (d.scrollTop + d.clientHeight));
+				if(b.scrollHeight - (d.scrollTop + d.clientHeight) < 300) {
+					// console.log(b.scrollHeight - (d.scrollTop + d.clientHeight));
 					window.scrollTo(0, document.body.scrollHeight);
 				}
 			}
