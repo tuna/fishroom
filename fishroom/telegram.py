@@ -339,7 +339,8 @@ class Telegram(BaseBotInstance):
                     mtype = MessageType.Event
                 else:
                     url, err = self.upload_document(doc, filetype="video")
-                    if doc["file_name"] in ("animation.gif.mp4", "giphy.mp4"):
+                    filename = doc["file_name"]
+                    if filename == "giphy.mp4" or filename.endswith(".gif.mp4"):
                         mtype = MessageType.Animation
                     else:
                         mtype = MessageType.Video

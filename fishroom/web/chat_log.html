@@ -30,7 +30,7 @@
 						<span v-if="!(msg.mtype=='photo'||msg.mtype=='sticker'||msg.mtype=='animation'||msg.mtype=='video')">{{{! msg.content | fishify }}}</span>
 						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" src='' :src="msg.media_url" />
 						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source src='' :src="msg.media_url" /></audio>
-						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop><source src='' :src="msg.media_url" /></video>
+						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop muted><source src='' :src="msg.media_url" /></video>
 						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source src='' :src="msg.media_url" /></video>
 					</span>
 				</span>
