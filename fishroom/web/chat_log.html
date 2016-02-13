@@ -27,7 +27,7 @@
 				<span class="time col-xs-6 text-right">{{!msg.time}}</span>
 				<span class="col-xs-12">
 					<span class="content" data-msg-type="{{!msg.mtype}}">
-						<span v-if="!(msg.mtype=='photo'||msg.mtype=='sticker'||msg.mtype=='animation'||msg.mtype=='video')">{{{! msg.content | fishify }}}</span>
+						<span v-if="!(hideContent[msg.mtype])">{{{! msg.content | fishify }}}</span>
 						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" src='' :src="msg.media_url" />
 						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source src='' :src="msg.media_url" /></audio>
 						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop muted><source src='' :src="msg.media_url" /></video>
@@ -118,7 +118,8 @@ $(document).ready(function() {
 		current_id: {{next_id}},
 		fetchLimit: 10,
 		loaded: false,
-		msgs: []
+		msgs: [],
+		hideContent: {'photo': true,'sticker': true, 'animation': true, 'audio': true, 'video': true}
 	}
 	window.new_message = function(msg) {
 		msg.id = fishLogData.current_id;
