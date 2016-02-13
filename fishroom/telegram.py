@@ -6,6 +6,7 @@ import imghdr
 import requests
 import requests.exceptions
 import mimetypes
+import magic
 from collections import namedtuple
 from .base import BaseBotInstance
 from .photostore import BasePhotoStore
@@ -282,6 +283,8 @@ class Telegram(BaseBotInstance):
         if filedata is None:
             return None, "teleboto Faild to download file"
 
+        if mime is None:
+            mime = magic.from_buffer(filedata, mime=True).decode('utf-8')
         ext = mimetypes.guess_extension(mime)
         filename = "voice" + ext
         url = self.file_store.upload_file(filedata, filename, filetype="audio")
@@ -356,7 +359,7 @@ class Telegram(BaseBotInstance):
 
         elif "voice" in jmsg:
             file_id = jmsg["voice"]["file_id"]
-            mime_type = jmsg["voice"]["mime_type"]
+            mime_type = jmsg["voice"].get("mime_type")
 
             url, err = self.upload_audio(file_id, mime_type)
 
