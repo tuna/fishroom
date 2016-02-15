@@ -116,7 +116,10 @@ class ChatLogHandler(tornado.web.RequestHandler):
             next_id=mlen,
             enable_ws=enable_ws,
             room=room,
-            rooms=config["bindings"].keys(),
+            rooms=[
+                x for x in config["bindings"].keys()
+                if x not in config.get("private_rooms", ())
+            ],
             date=date,
             dates=dates,
             basepath=p.path,
