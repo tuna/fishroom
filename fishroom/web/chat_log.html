@@ -3,11 +3,7 @@
 {% block content %}
 
 {% if not embedded %}
-<div id="titlebar">
-	<div class="container">
-		<h3>{{title}}</h3>
-	</div>
-</div>
+{% include "navbar.html" %}
 {% end %}
 
 <div class="container" id="fishlog">
@@ -72,7 +68,7 @@
 		<div id="footer">
 				<div class="text-center">
 					<span>Powered by <a href="https://github.com/tuna/fishroom">Fishroom</a> </span>| <span>Licensed under AGPLv3</span>
-					{% if 'sponsor' in fishroom.config.config %} | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span>{% end %}
+					{% if 'sponsor' in fishroom.config.config %} <span class="hidden-xs"> | <span>{% raw fishroom.config.config['sponsor']['footer'] %}</span> </span>{% end %}
 				</div>
 		</div>
 		{% end %}

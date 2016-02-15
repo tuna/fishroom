@@ -106,6 +106,9 @@ class ChatLogHandler(tornado.web.RequestHandler):
         baseurl = config["baseurl"]
         p = urlparse(baseurl)
 
+        dates = [(get_now() - timedelta(days=i)).strftime("%Y-%m-%d")
+                 for i in range(7)]
+
         self.render(
             "chat_log.html",
             title="#{room} @ {date}".format(
@@ -113,6 +116,9 @@ class ChatLogHandler(tornado.web.RequestHandler):
             next_id=mlen,
             enable_ws=enable_ws,
             room=room,
+            rooms=config["bindings"].keys(),
+            date=date,
+            dates=dates,
             basepath=p.path,
             embedded=(embedded is not None),
             limit=int(limit),
@@ -163,7 +169,6 @@ class PostMessageHandler(tornado.web.RequestHandler):
         mtype = MessageType.Command \
             if BaseBotInstance.is_cmd(content) \
             else MessageType.Text
-        print(mtype)
         msg = Message(
             ChannelType.Web, sender, room, content=content,
             mtype=mtype, date=date, time=time, room=room
