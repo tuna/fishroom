@@ -271,8 +271,9 @@ class Telegram(BaseBotInstance):
             return None, "teleboto Faild to download file"
 
         print("[Telegram] uploading document {}".format(doc["file_id"]))
+
         url = self.file_store.upload_file(
-            filedata, doc["file_name"], filetype=filetype)
+            filedata, doc.get("file_name", "file"), filetype=filetype)
         if url is None:
             return None, "Failed to upload Document"
 
@@ -342,7 +343,7 @@ class Telegram(BaseBotInstance):
                     mtype = MessageType.Event
                 else:
                     url, err = self.upload_document(doc, filetype="video")
-                    filename = doc["file_name"]
+                    filename = doc.get("file_name", None)
                     if filename == "giphy.mp4" or filename.endswith(".gif.mp4"):
                         mtype = MessageType.Animation
                     else:
