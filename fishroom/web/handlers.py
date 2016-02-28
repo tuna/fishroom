@@ -226,17 +226,32 @@ class APIRequestHandler(tornado.web.RequestHandler):
 
     mgr = APIClientManager(pr)
 
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+
+    def write_json(self, status_code=200, **kwargs):
+        self.set_status(status_code)
+        self.write(json.dumps(kwargs))
+
+    def auth(self):
+        token_id = self.get_argument("id")
+        token_key = self.get_argument("key")
+        fine = self.mgr.auth(token_id, token_key)
+        if not fine:
+            self.set_status(403)
+            return
+        return token_id
+
 
 class APILongPollingHandler(APIRequestHandler):
 
     @gen.coroutine
     def get(self):
-        token_id = self.get_argument("id")
-        token_key = self.get_argument("key")
-        fine = self.mgr.auth(token_id, token_key)
-        if not fine:
-            self.set_status(403, "Invalid tokens")
-            self.finish()
+        token_id = self.auth()
+        if token_id is None:
+            self.finish("Invalid Token")
+            return
+        room = self.get_argument("room")
 
         queue = APIClientManager.queue_key.format(token_id=token_id)
         l = yield gen.Task(r.llen, queue)
@@ -248,9 +263,9 @@ class APILongPollingHandler(APIRequestHandler):
             ret = yield gen.Task(r.blpop, queue, timeout=10)
             if ret:
                 msgs = [ret]
-
-        ret = {'messages': msgs}
-        self.write(json.dumps(ret))
+        if room:
+            msgs = [m for m in msgs if m == room]
+        self.write_json(messages=msgs)
         self.finish()
 
 
@@ -266,12 +281,6 @@ class APIPostMessageHandler(APIRequestHandler):
             return
 
         self.write_json(400, message="Bad Request")  # Bad Request
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-
-    def write_json(self, status_code, **kwargs):
-        self.write(json.dumps(kwargs))
 
     def post(self, room):
         token_id = self.json_data.get("id", "NONE")
