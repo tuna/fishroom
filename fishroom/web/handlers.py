@@ -251,7 +251,8 @@ class APILongPollingHandler(APIRequestHandler):
         if token_id is None:
             self.finish("Invalid Token")
             return
-        room = self.get_argument("room")
+
+        room = self.get_argument("room", None)
 
         queue = APIClientManager.queue_key.format(token_id=token_id)
         l = yield gen.Task(r.llen, queue)
@@ -259,12 +260,15 @@ class APILongPollingHandler(APIRequestHandler):
         if l > 0:
             msgs = yield gen.Task(r.lrange, queue, 0, -1)
             pr.delete(queue)
+            msgs = [json.loads(m) for m in msgs]
         else:
             ret = yield gen.Task(r.blpop, queue, timeout=10)
-            if ret:
-                msgs = [ret]
+            if queue in ret:
+                msgs = [json.loads(ret[queue])]
+
         if room:
-            msgs = [m for m in msgs if m == room]
+            msgs = [m for m in msgs if m['room'] == room]
+
         self.write_json(messages=msgs)
         self.finish()
 
