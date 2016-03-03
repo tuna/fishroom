@@ -44,13 +44,13 @@ class TextStoreHandler(tornado.web.RequestHandler):
     def get(self, room, date, msg_id):
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
         msg_id = int(msg_id)
-        val = yield gen.Task(r.lrange, key, msg_id, msg_id)
+        val = pr.lrange(key, msg_id, msg_id)
         if not val:
             self.clear()
             self.set_status(404)
             self.finish("text not found")
             return
-        msg = Message.loads(val[0])
+        msg = Message.loads(val[0].decode('utf-8'))
         # self.set_header('Content-Type', 'text/html')
         self.render(
             "text_store.html",
@@ -84,7 +84,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
         embedded = self.get_argument("embedded", None)
 
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
-        mlen = yield gen.Task(r.llen, key)
+        mlen = pr.llen(key)
 
         last = int(self.get_argument("last", mlen)) - 1
         limit = int(self.get_argument("limit", 15 if embedded else mlen))
@@ -92,8 +92,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
         start = max(last - limit + 1, 0)
 
         if self.get_argument("json", False):
-            logs = yield gen.Task(r.lrange, key, start, last)
-            msgs = [json.loads(jmsg) for jmsg in logs]
+            logs = pr.lrange(key, start, last)
+            msgs = [json.loads(jmsg.decode("utf-8")) for jmsg in logs]
             for i, m in zip(range(start, last+1), msgs):
                 m['id'] = i
                 m.pop('opt')
