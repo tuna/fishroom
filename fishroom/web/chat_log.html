@@ -24,7 +24,7 @@
 				<span class="col-xs-12">
 					<span class="content" data-msg-type="{{!msg.mtype}}">
 						<span v-if="!(hideContent[msg.mtype])">{{{! msg.content | fishify }}}</span>
-						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" src='' :src="msg.media_url" />
+						<img v-if="(msg.mtype=='photo'||msg.mtype=='sticker')" class="thumbnail fishroom-{{!msg.mtype}}" src='' :src="msg.media_url" @load="imgLoaded" />
 						<audio v-if="msg.mtype=='audio'" class="fishroom-audio" controls><source src='' :src="msg.media_url" /></audio>
 						<video v-if="msg.mtype=='animation'" class="fishroom-video fishroom-animation" autoplay loop muted><source src='' :src="msg.media_url" /></video>
 						<video v-if="msg.mtype=='video'" class="fishroom-video" controls><source src='' :src="msg.media_url" /></video>
@@ -108,7 +108,8 @@ $(document).ready(function() {
 						.replace(urlRegex, '<a href="$1">$1</a>')
 		);
 	});
-
+	
+	window.shouldScroll = true;
 	var fishLogData = {
 		start_id: -1,
 		current_id: {{next_id}},
@@ -172,6 +173,12 @@ $(document).ready(function() {
 		methods: {
 			fetchMore: function() {
 				fetchLog(42, this.start_id, false);
+			},
+			imgLoaded: function() {
+				// console.log("img loaded");
+				if (window.shouldScroll) {
+						window.scrollTo(0, document.body.scrollHeight);
+				}
 			}
 		}
 	});
@@ -195,9 +202,12 @@ $(document).ready(function() {
 				// console.log(msg);
 				new_message(msg);
 				var b = document.body, d = document.documentElement;
-				if(b.scrollHeight - (d.scrollTop + d.clientHeight) < 300) {
+				if(b.scrollHeight - (d.scrollTop + d.clientHeight) < 500) {
 					// console.log(b.scrollHeight - (d.scrollTop + d.clientHeight));
+					window.shouldScroll = true;
 					window.scrollTo(0, document.body.scrollHeight);
+				} else {
+					window.shouldScroll = false;
 				}
 			}
 		};
