@@ -35,10 +35,7 @@ class MessageSchema(Schema):
     """
 
     # Where is this message from
-    channel = fields.String(validate=validate.OneOf(
-        (ChannelType.IRC, ChannelType.XMPP, ChannelType.Telegram,
-         ChannelType.Web, ChannelType.API, ),
-    ))
+    channel = fields.String()
     # message sender
     sender = fields.String()
     # message receiver (usually group id)

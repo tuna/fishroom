@@ -75,8 +75,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
             enable_ws = True
             date = get_now().strftime("%Y-%m-%d")
 
-        if (get_now() - tz.localize(datetime.strptime(date, "%Y-%m-%d"))
-                > timedelta(days=7)):
+        if ((get_now() - tz.localize(datetime.strptime(date, "%Y-%m-%d"))) >
+                timedelta(days=7)):
             self.set_status(403)
             self.finish("Dark History Coverred")
             return
@@ -278,38 +278,37 @@ class APIPostMessageHandler(APIRequestHandler):
     def prepare(self):
         if self.request.body:
             try:
-                self.json_data = json.loads(self.request.body)
+                self.json_data = json.loads(self.request.body.decode('utf-8'))
             except ValueError:
                 message = 'Unable to parse JSON.'
                 self.write_json(400, message=message)  # Bad Request
+                self.finish()
             return
 
-        self.write_json(400, message="Bad Request")  # Bad Request
+        self.write_json(400, message="Cannot handle empty request")
+        self.finish()
 
     def post(self, room):
-        token_id = self.json_data.get("id", "NONE")
-        token_key = self.json_data.get("key", "NONE")
-        fine = self.mgr.auth(token_id, token_key)
-        if not fine:
-            self.write_json(403, "Invalid tokens")
+        token_id = self.auth()
+        if token_id is None:
+            self.finish("Invalid Token")
             return
 
         content = self.json_data.get("content", None)
         if not content:
-            self.write_json(400, "Cannot send empty message")
+            self.write_json(400, message="Cannot send empty message")
+            self.finish()
 
-        sender = self.mgr.get_name(token_id)
+        apiname = self.mgr.get_name(token_id)
+        sender = self.json_data.get("sender", apiname)
         now = get_now()
         date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
+        chantag = "{}-{}".format(ChannelType.API, apiname)
         msg = Message(
-            ChannelType.API, sender, room, content=content,
+            chantag, sender, room, content=content,
             date=date, time=time, room=room
         )
 
         pr.publish(MessageBus.CHANNEL, msg.dumps())
         self.write("OK")
         self.finish()
-
-
-
-
