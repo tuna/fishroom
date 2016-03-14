@@ -304,9 +304,12 @@ class APIPostMessageHandler(APIRequestHandler):
         now = get_now()
         date, time = now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S")
         chantag = "{}-{}".format(ChannelType.API, apiname)
+        mtype = MessageType.Command \
+            if BaseBotInstance.is_cmd(content) \
+            else MessageType.Text
         msg = Message(
             chantag, sender, room, content=content,
-            date=date, time=time, room=room
+            mtype=mtype, date=date, time=time, room=room
         )
 
         pr.publish(MessageBus.CHANNEL, msg.dumps())
