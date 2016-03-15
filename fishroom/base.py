@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 from .command import LEADING_CHARS, parse_command
 
 
@@ -31,5 +32,10 @@ class BaseBotInstance(object):
 
     def msg_tmpl(self, sender=None):
         return "{content}" if sender is None else "[{sender}] {content}"
+
+    def match_nickname(self, content):
+        m = re.match(r'^\[(\w+)\].*', content, flags=re.UNICODE)
+        return m.group(1) if m else None
+
 
 # vim: ts=4 sw=4 sts=4 expandtab

@@ -18,7 +18,7 @@ from .config import config
 TeleMessage = namedtuple(
     'TeleMessage',
     ('msg_id', 'user_id', 'username', 'chat_id',
-     'content', 'mtype', 'ts', 'media_url')
+     'content', 'mtype', 'ts', 'media_url', 'reply_to')
 )
 
 
@@ -152,6 +152,7 @@ class Telegram(BaseBotInstance):
     def __init__(self, token="", nick_store=None,
                  sticker_url_store=None, photo_store=None, file_store=None):
         self._token = token
+        self.uid = int(token.split(':')[0])
         self.api_base = self._api_base_tmpl.format(token=token)
         self.file_base = self._file_base_tmpl.format(token=token)
 
@@ -403,9 +404,23 @@ class Telegram(BaseBotInstance):
             content = content + " <forwarded from {} {}>".format(
                 ffrom.get("first_name", ""), ffrom.get("last_name", ""))
 
+        reply_to = None
+        if "reply_to_message" in jmsg:
+            reply = jmsg["reply_to_message"]
+            reply_user = reply.get("from", None)
+            if reply_user:
+                if reply_user["id"] == self.uid:
+                    if 'text' in reply:
+                        nick = self.match_nickname(reply['text'])
+                        if nick:
+                            reply_to = nick
+                else:
+                    reply_to = reply_user["id"]
+
         return TeleMessage(
             msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
-            content=content, mtype=mtype, ts=ts, media_url=media_url
+            content=content, mtype=mtype, ts=ts, media_url=media_url,
+            reply_to=reply_to
         )
 
     def message_stream(self, id_blacklist=None):
@@ -460,6 +475,17 @@ class Telegram(BaseBotInstance):
                 nickname = self.nick_store.get_nickname(
                     telemsg.user_id, telemsg.username)
 
+                reply_to = ""
+                if telemsg.reply_to:
+                    if isinstance(telemsg.reply_to, str):
+                        reply_to = telemsg.reply_to
+                    elif isinstance(telemsg.reply_to, int):
+                        reply_to = self.nick_store.get_nickname(
+                            telemsg.reply_to, "")
+
+                content = "{}: {}".format(reply_to, telemsg.content) \
+                    if (reply_to and reply_to != nickname) else telemsg.content
+
                 receiver = "%d" % telemsg.chat_id
 
                 date, time = timestamp_date_time(telemsg.ts) \
@@ -467,7 +493,7 @@ class Telegram(BaseBotInstance):
 
                 yield Message(
                     ChannelType.Telegram,
-                    nickname, receiver, telemsg.content, telemsg.mtype,
+                    nickname, receiver, content, telemsg.mtype,
                     date=date, time=time, media_url=telemsg.media_url,
                     opt={'msg_id': telemsg.msg_id,
                          'username': telemsg.username}
