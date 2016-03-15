@@ -18,7 +18,8 @@ from .config import config
 TeleMessage = namedtuple(
     'TeleMessage',
     ('msg_id', 'user_id', 'username', 'chat_id',
-     'content', 'mtype', 'ts', 'media_url', 'reply_to')
+     'content', 'mtype', 'ts', 'media_url',
+     'reply_to', 'reply_text')
 )
 
 
@@ -404,23 +405,24 @@ class Telegram(BaseBotInstance):
             content = content + " <forwarded from {} {}>".format(
                 ffrom.get("first_name", ""), ffrom.get("last_name", ""))
 
-        reply_to = None
+        reply_to, reply_text = None, None
         if "reply_to_message" in jmsg:
             reply = jmsg["reply_to_message"]
             reply_user = reply.get("from", None)
             if reply_user:
                 if reply_user["id"] == self.uid:
                     if 'text' in reply:
-                        nick = self.match_nickname(reply['text'])
-                        if nick:
-                            reply_to = nick
+                        reply_to, reply_text = \
+                            self.match_nickname_content(reply['text'])
+                        print(reply['text'], reply_to)
                 else:
                     reply_to = reply_user["id"]
+                    reply_text = reply.get('text', '')
 
         return TeleMessage(
             msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
             content=content, mtype=mtype, ts=ts, media_url=media_url,
-            reply_to=reply_to
+            reply_to=reply_to, reply_text=reply_text
         )
 
     def message_stream(self, id_blacklist=None):
@@ -491,12 +493,20 @@ class Telegram(BaseBotInstance):
                 date, time = timestamp_date_time(telemsg.ts) \
                     if telemsg.ts else get_now_date_time()
 
+                opt = {
+                    'msg_id': telemsg.msg_id,
+                    'username': telemsg.username,
+                }
+
+                if reply_to:
+                    opt['reply_to'] = reply_to
+                    opt['reply_text'] = telemsg.reply_text
+
                 yield Message(
                     ChannelType.Telegram,
                     nickname, receiver, content, telemsg.mtype,
                     date=date, time=time, media_url=telemsg.media_url,
-                    opt={'msg_id': telemsg.msg_id,
-                         'username': telemsg.username}
+                    opt=opt
                 )
 
     def try_set_nick(self, msg):

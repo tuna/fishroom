@@ -192,8 +192,8 @@ def ForwardingThread(channels, text_store):
         if msg.botmsg:
             send_back = True
 
-        if (msg.content.count('\n') > 5
-                or len(msg.content.encode('utf-8')) >= 400):
+        if (msg.content.count('\n') > 5 or
+                len(msg.content.encode('utf-8')) >= 400):
             text_url = text_store.new_paste(
                 msg.content, msg.sender,
                 channel=room, date=msg.date, time=msg.time, msg_id=msg_id
@@ -231,9 +231,10 @@ def ForwardingThread(channels, text_store):
                 c.send_msg(target, msg.content, sender=sender, **msg.opt)
                 continue
 
-            for line in contents:
+            for i, line in enumerate(contents):
                 sender = None if msg.botmsg else msg.sender
-                c.send_msg(target, content=line, sender=sender, **msg.opt)
+                c.send_msg(target, content=line, sender=sender,
+                           last=(i == len(contents)-1), **msg.opt)
 
 
 def main():

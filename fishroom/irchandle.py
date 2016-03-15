@@ -105,9 +105,15 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
-    def send_msg(self, target, content, sender=None, **kwargs):
+    def send_msg(self, target, content, sender=None, last=False, **kwargs):
         tmpl = self.msg_tmpl(sender)
         msg = tmpl.format(sender=sender, content=content)
+        if last and 'reply_text' in kwargs:
+            reply_text = kwargs['reply_text']
+            if len(reply_text) > 5:
+                reply_text = reply_text[:5] + '...'
+            msg = '{} >"{}"'.format(msg, reply_text)
+
         try:
             self.irc_conn.privmsg(target, msg)
         except irc.client.ServerNotConnectedError:
