@@ -105,8 +105,16 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
+    def msg_tmpl(self, sender=None, color=None):
+        if color and sender:
+            return "[\x03{color}{sender}\x03] {content}"
+        else:
+            return "{content}" if sender is None else "[{sender}] {content}"
+
     def send_msg(self, target, content, sender=None, last=False, **kwargs):
-        color_avail = (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+        # color that fits both dark and light background
+        color_avail = (2, 3, 4, 5, 6, 7, 10, 12, 13)
+        color = None
 
         if sender:
             # color defined at http://www.mirc.com/colors.html
@@ -114,11 +122,9 @@ class IRCHandle(BaseBotInstance):
             cidx = sum([ord(i) for i in sender]) % len(color_avail)
             foreground_num = color_avail[cidx]
             color = str(foreground_num)  # + ',' + str(background_num)
-            sender = chr(3) + color + sender + chr(3)
 
-        print(sender)
-        tmpl = self.msg_tmpl(sender)
-        msg = tmpl.format(sender=sender, content=content)
+        tmpl = self.msg_tmpl(sender, color)
+        msg = tmpl.format(sender=sender, content=content, color=color)
         if last and 'reply_text' in kwargs:
             reply_text = kwargs['reply_text']
             if len(reply_text) > 5:
