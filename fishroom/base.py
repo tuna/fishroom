@@ -34,7 +34,7 @@ class BaseBotInstance(object):
         return "{content}" if sender is None else "[{sender}] {content}"
 
     def match_nickname_content(self, content):
-        m = re.match(r'^\[(\w+)\] (.*)', content, flags=re.UNICODE)
+        m = re.match(r'^\[(.+)\] (.*)', content, flags=re.UNICODE)
         return m.groups() if m else (None, None)
 
 
