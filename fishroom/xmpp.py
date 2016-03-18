@@ -53,7 +53,7 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
             reply_text = kwargs['reply_text']
             if len(reply_text) > 5:
                 reply_text = reply_text[:5] + '...'
-            mbody = '{} >"{}"'.format(mbody, reply_text)
+            mbody = '{} 「{}」'.format(mbody, reply_text)
 
         self.send_message(mto=target, mbody=mbody, mtype='groupchat')
 

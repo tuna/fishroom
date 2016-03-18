@@ -107,7 +107,7 @@ class IRCHandle(BaseBotInstance):
 
     def msg_tmpl(self, sender=None, color=None):
         if color and sender:
-            return "\x03{color}[\x1f{sender}\x1f]\x03 {content}"
+            return "\x03{color}[{sender}]\x03 {content}"
         else:
             return "{content}" if sender is None else "[{sender}] {content}"
 
@@ -129,7 +129,7 @@ class IRCHandle(BaseBotInstance):
             reply_text = kwargs['reply_text']
             if len(reply_text) > 5:
                 reply_text = reply_text[:5] + '...'
-            msg = '{} >"{}"'.format(msg, reply_text)
+            msg = '{} 「{}」'.format(msg, reply_text)
 
         try:
             self.irc_conn.privmsg(target, msg)
