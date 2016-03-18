@@ -38,6 +38,14 @@ class DefaultHandler(tornado.web.RequestHandler):
         self.redirect(url)
 
 
+class RobotsTxtHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.set_header('Content-Type', 'text/plain')
+        self.write("User-agent: *\nDisallow: /")
+        self.finish()
+
+
 class TextStoreHandler(tornado.web.RequestHandler):
 
     @gen.coroutine

@@ -3,7 +3,8 @@ import tornado.ioloop
 import tornado.web
 from .web.handlers import (
     DefaultHandler, TextStoreHandler, ChatLogHandler, MessageStreamHandler,
-    PostMessageHandler, APILongPollingHandler, APIPostMessageHandler
+    PostMessageHandler, APILongPollingHandler, APIPostMessageHandler,
+    RobotsTxtHandler
 )
 from .config import config
 
@@ -12,6 +13,7 @@ def main():
     debug = config.get("debug", False)
     application = tornado.web.Application([
         (r"/", DefaultHandler),
+        (r"/robots.txt", RobotsTxtHandler),
         (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)", ChatLogHandler),
         (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)/([0-9]+)", TextStoreHandler),
         (r"/messages/([a-z0-9_-]+)/", PostMessageHandler),
