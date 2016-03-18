@@ -106,12 +106,17 @@ class IRCHandle(BaseBotInstance):
         conn.nick(conn.get_nickname() + "_")
 
     def send_msg(self, target, content, sender=None, last=False, **kwargs):
+        color_avail = (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+
         if sender:
             # color defined at http://www.mirc.com/colors.html
-            background_num = sum([ord(i) for i in sender]) % 16
-            foreground_num = 1 if background_num in [0, 8, 9, 11, 15] else 0
-            color = str(foreground_num) + ',' + str(background_num)
+            # background_num = sum([ord(i) for i in sender]) % 16
+            cidx = sum([ord(i) for i in sender]) % len(color_avail)
+            foreground_num = color_avail[cidx]
+            color = str(foreground_num)  # + ',' + str(background_num)
             sender = chr(3) + color + sender + chr(3)
+
+        print(sender)
         tmpl = self.msg_tmpl(sender)
         msg = tmpl.format(sender=sender, content=content)
         if last and 'reply_text' in kwargs:
