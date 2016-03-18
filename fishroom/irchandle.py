@@ -107,7 +107,7 @@ class IRCHandle(BaseBotInstance):
 
     def msg_tmpl(self, sender=None, color=None):
         if color and sender:
-            return "[\x1f\x03{color},99{sender}\x03\x1f] {content}"
+            return "\x03{color}[\x1f{sender}\x1f]\x03 {content}"
         else:
             return "{content}" if sender is None else "[{sender}] {content}"
 
