@@ -485,8 +485,7 @@ class Telegram(BaseBotInstance):
                         reply_to = self.nick_store.get_nickname(
                             telemsg.reply_to, "")
 
-                content = "{}: {}".format(reply_to, telemsg.content) \
-                    if (reply_to and reply_to != nickname) else telemsg.content
+                content = telemsg.content
 
                 receiver = "%d" % telemsg.chat_id
 

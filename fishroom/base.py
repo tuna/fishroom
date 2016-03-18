@@ -34,8 +34,11 @@ class BaseBotInstance(object):
         return "{content}" if sender is None else "[{sender}] {content}"
 
     def match_nickname_content(self, content):
-        m = re.match(r'^\[(.+)\] (.*)', content, flags=re.UNICODE)
-        return m.groups() if m else (None, None)
+        m = re.match(
+            r'^\[(?P<nick>.+)\] (?P<content>.*)',
+            content, flags=re.UNICODE
+        )
+        return (m.group('nick'), m.group('content')) if m else (None, None)
 
 
 # vim: ts=4 sw=4 sts=4 expandtab

@@ -105,13 +105,13 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
-    def msg_tmpl(self, sender=None, color=None):
+    def msg_tmpl(self, sender=None, color=None, reply_quote="", reply_to=""):
         if color and sender:
-            return "\x03{color}[{sender}]\x03 {content}"
+            return "\x03{color}[{sender}]\x03 {reply_quote}{content}"
         else:
             return "{content}" if sender is None else "[{sender}] {content}"
 
-    def send_msg(self, target, content, sender=None, last=False, **kwargs):
+    def send_msg(self, target, content, sender=None, first=False, **kwargs):
         # color that fits both dark and light background
         color_avail = (2, 3, 4, 5, 6, 7, 10, 12, 13)
         color = None
@@ -124,12 +124,17 @@ class IRCHandle(BaseBotInstance):
             color = str(foreground_num)  # + ',' + str(background_num)
 
         tmpl = self.msg_tmpl(sender, color)
-        msg = tmpl.format(sender=sender, content=content, color=color)
-        if last and 'reply_text' in kwargs:
+        reply_quote = ""
+        if first and 'reply_text' in kwargs:
+            reply_to = kwargs['reply_to']
             reply_text = kwargs['reply_text']
-            if len(reply_text) > 5:
-                reply_text = reply_text[:5] + '...'
-            msg = '{} 「{}」'.format(msg, reply_text)
+            if len(reply_text) > 6:
+                reply_text = reply_text[:6] + '...'
+            reply_quote = "\x0315「Re {reply_to}: {reply_text}」\x03".format(
+                reply_text=reply_text, reply_to=reply_to)
+
+        msg = tmpl.format(sender=sender, content=content,
+                          reply_quote=reply_quote, color=color)
 
         try:
             self.irc_conn.privmsg(target, msg)

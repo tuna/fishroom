@@ -46,14 +46,23 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
                 mtype=mtype, date=date, time=time)
             self.send_to_bus(self, msg)
 
-    def send_msg(self, target, content, sender=None, last=False, **kwargs):
+    def msg_tmpl(self, sender=None, reply_quote="", reply_to=""):
+        return "{content}" if sender is None else \
+            "[{sender}] {reply_quote}{content}"
+
+    def send_msg(self, target, content, sender=None, first=False, **kwargs):
         tmpl = self.msg_tmpl(sender)
-        mbody = tmpl.format(sender=sender, content=content)
-        if last and 'reply_text' in kwargs:
+        reply_quote = ""
+        if first and 'reply_text' in kwargs:
+            reply_to = kwargs['reply_to']
             reply_text = kwargs['reply_text']
             if len(reply_text) > 5:
                 reply_text = reply_text[:5] + '...'
-            mbody = '{} 「{}」'.format(mbody, reply_text)
+                reply_quote = "「Re {reply_to}: {reply_text}」".format(
+                    reply_text=reply_text, reply_to=reply_to)
+
+        mbody = tmpl.format(sender=sender, content=content,
+                            reply_quote=reply_quote)
 
         self.send_message(mto=target, mbody=mbody, mtype='groupchat')
 
