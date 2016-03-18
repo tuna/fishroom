@@ -104,6 +104,7 @@ $(document).ready(function() {
 				text
 						.replace(/</g, '&lt;')
 						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
 						.replace(/(?:\r\n|\r|\n)/g, '<br/>')
 						.replace(urlRegex, '<a href="$1">$1</a>')
 		);
