@@ -536,14 +536,17 @@ class Telegram(BaseBotInstance):
                 )
             return True
 
-    def send_photo(self, target, photo_data):
+    def send_photo(self, target, photo_data, sender=None):
+
         api = self.api_base + "/sendPhoto"
+        caption = "{} sent a photo".format(sender) if sender else ""
+
         ft = imghdr.what('', photo_data)
         if ft is None:
             return
         filename = "image." + ft
-        data={'chat_id': target}
-        files={'photo': (filename, photo_data)}
+        data = {'chat_id': target, 'caption': caption}
+        files = {'photo': (filename, photo_data)}
         self._must_post(api, data=data, files=files)
 
     def send_msg(self, peer, content, sender=None, escape=True, **kwargs):

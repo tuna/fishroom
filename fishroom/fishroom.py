@@ -221,10 +221,9 @@ def ForwardingThread(channels, text_store):
             if (msg.mtype == MessageType.Photo and c.SupportPhoto):
                 if msg.media_url:
                     photo_data, ptype = download_file(msg.media_url)
-                    ptype.startswith("image")
-                    c.send_msg(target, "image", sender=msg.sender, **msg.opt)
-                    c.send_photo(target, photo_data)
-                    continue
+                    if ptype is not None and ptype.startswith("image"):
+                        c.send_photo(target, photo_data, sender=msg.sender)
+                        continue
 
             if c.SupportMultiline:
                 sender = None if msg.botmsg else msg.sender

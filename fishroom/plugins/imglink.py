@@ -8,7 +8,7 @@ url_regex = re.compile(r'https?://[^\s<>"]+')
 
 
 @command("imglink", desc="set message type as image", usage="imglink <link>")
-def pia(cmd, *args, **kwargs):
+def imglink(cmd, *args, **kwargs):
     msg = kwargs.get("msg", None)
     if msg is None:
         return
