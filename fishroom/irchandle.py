@@ -73,7 +73,8 @@ class IRCHandle(BaseBotInstance):
         irc_nick = event.source[:event.source.index('!')]
         if irc_nick in self.blacklist:
             return
-        content = event.arguments[0]
+        content = self.filter_color(event.arguments[0])
+
         date, time = get_now_date_time()
         mtype = MessageType.Command \
             if self.is_cmd(content) \
@@ -145,6 +146,31 @@ class IRCHandle(BaseBotInstance):
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
+
+    @classmethod
+    def filter_color(cls, msg):
+        # filter \x01 - \x19 control seq
+        # filter \x03{foreground}[,{background}] color string
+        def char_iter(msg):
+            state = "char"
+            for x in msg:
+                if state == "char":
+                    if x == '\x03':
+                        state = "color"
+                        continue
+                    if 0 < ord(x) <= 0x1f:
+                        continue
+                    yield x
+                elif state == "color":
+                    if '0' < x < '9':
+                        continue
+                    elif x == ',':
+                        continue
+                    else:
+                        state = 'char'
+                        yield x
+
+        return ''.join(char_iter(msg))
 
 
 def IRCThread(irc_handle, bus):
