@@ -319,6 +319,8 @@ class Telegram(BaseBotInstance):
                 content = err
             else:
                 content = url + " (photo)"
+                if 'caption' in jmsg:
+                    content = content + "\n" + jmsg['caption']
                 media_url = url
                 mtype = MessageType.Photo
 
