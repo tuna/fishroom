@@ -17,7 +17,7 @@ command_handlers = {}
 
 def register_command(cmd, func, **options):
     if cmd in command_handlers:
-        raise Exception("Command '%s' already registed" % cmd)
+        raise Exception("Command '%s' already registerred" % cmd)
     print("[Fishroom] command `%s` registerred" % cmd)
     command_handlers[cmd] = CmdHandler(
         func, options.get("desc", ""), options.get("usage", ""))
