@@ -108,7 +108,7 @@ class IRCHandle(BaseBotInstance):
 
     def msg_tmpl(self, sender=None, color=None, reply_quote="", reply_to=""):
         if color and sender:
-            return "\x03{color}[{sender}]\x03 {reply_quote}{content}"
+            return "\x03{color}[{sender}]\x0f {reply_quote}{content}"
         else:
             return "{content}" if sender is None else "[{sender}] {content}"
 
@@ -131,7 +131,7 @@ class IRCHandle(BaseBotInstance):
             reply_text = kwargs['reply_text']
             if len(reply_text) > 6:
                 reply_text = reply_text[:6] + '...'
-            reply_quote = "\x0315「Re {reply_to}: {reply_text}」\x03".format(
+            reply_quote = "\x0315「Re {reply_to}: {reply_text}」\x0f".format(
                 reply_text=reply_text, reply_to=reply_to)
 
         msg = tmpl.format(sender=sender, content=content,
