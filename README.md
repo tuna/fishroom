@@ -15,7 +15,7 @@ big party again.
 - IRC
 - XMPP
 - Telegram
-- Tox
+- Tox (not yet)
 - Wechat (maybe)
 
 ## TODO
