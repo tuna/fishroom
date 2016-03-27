@@ -227,13 +227,15 @@ def ForwardingThread(channels, text_store):
 
             if c.SupportMultiline:
                 sender = None if msg.botmsg else msg.sender
-                c.send_msg(target, msg.content, sender=sender, **msg.opt)
+                c.send_msg(target, msg.content, sender=sender,
+                           rich_text=msg.rich_text, **msg.opt)
                 continue
 
             for i, line in enumerate(contents):
                 sender = None if msg.botmsg else msg.sender
                 c.send_msg(target, content=line, sender=sender,
-                           first=(i == 0), **msg.opt)
+                           rich_text=msg.rich_text, first=(i == 0),
+                           **msg.opt)
 
 
 def main():

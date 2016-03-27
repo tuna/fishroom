@@ -6,6 +6,7 @@ import irc.client
 import random
 from .base import BaseBotInstance
 from .models import Message, ChannelType, MessageType
+from .textformat import TextFormatter
 from .helpers import get_now_date_time
 from .config import config
 
@@ -73,7 +74,12 @@ class IRCHandle(BaseBotInstance):
         irc_nick = event.source[:event.source.index('!')]
         if irc_nick in self.blacklist:
             return
-        content = self.filter_color(event.arguments[0])
+
+        rich_text = TextFormatter.parseIRC(event.arguments[0])
+        content = rich_text.toPlain()
+        # if only normal text is available
+        if len(rich_text) == 1 and rich_text[0][0].is_normal():
+            rich_text = None
 
         date, time = get_now_date_time()
         mtype = MessageType.Command \
@@ -82,7 +88,7 @@ class IRCHandle(BaseBotInstance):
 
         msg = Message(
             ChannelType.IRC, irc_nick, event.target, content,
-            mtype=mtype, date=date, time=time
+            mtype=mtype, date=date, time=time, rich_text=rich_text
         )
         self.send_to_bus(self, msg)
 
@@ -146,31 +152,6 @@ class IRCHandle(BaseBotInstance):
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
-
-    @classmethod
-    def filter_color(cls, msg):
-        # filter \x01 - \x19 control seq
-        # filter \x03{foreground}[,{background}] color string
-        def char_iter(msg):
-            state = "char"
-            for x in msg:
-                if state == "char":
-                    if x == '\x03':
-                        state = "color"
-                        continue
-                    if 0 < ord(x) <= 0x1f:
-                        continue
-                    yield x
-                elif state == "color":
-                    if '0' < x < '9':
-                        continue
-                    elif x == ',':
-                        continue
-                    else:
-                        state = 'char'
-                        yield x
-
-        return ''.join(char_iter(msg))
 
 
 def IRCThread(irc_handle, bus):

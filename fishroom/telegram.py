@@ -11,7 +11,7 @@ from collections import namedtuple
 from .base import BaseBotInstance
 from .photostore import BasePhotoStore
 from .filestore import BaseFileStore
-from .models import Message, ChannelType, MessageType
+from .models import Message, ChannelType, MessageType, RichText, TextStyle
 from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
 from .config import config
 
@@ -549,7 +549,8 @@ class Telegram(BaseBotInstance):
         files = {'photo': (filename, photo_data)}
         self._must_post(api, data=data, files=files)
 
-    def send_msg(self, peer, content, sender=None, escape=True, **kwargs):
+    def send_msg(self, peer, content, sender=None, escape=True, rich_text=None,
+                 **kwargs):
         for r in self.nickuser_regexes:
             m = r.match(content)
             if m is None:
@@ -560,7 +561,9 @@ class Telegram(BaseBotInstance):
                 continue
             content = r.sub(r'\g<pre>@{}\g<post>'.format(username), content)
 
-        if escape:
+        if rich_text:
+            content = self.formatRichText(rich_text)
+        elif escape:
             content = re.sub(r'([\[\*_])', r'\\\1', content)
 
         tmpl = self.msg_tmpl(sender)
@@ -578,6 +581,18 @@ class Telegram(BaseBotInstance):
 
     def msg_tmpl(self, sender=None):
         return "{content}" if sender is None else "*[{sender}]* {content}"
+
+    def formatRichText(self, rich_text: RichText):
+        md = ""
+        # telegram does not allow nested format
+        for ts, text in rich_text.text:
+            if ts.is_bold():
+                md += "*{}*".format(text)
+            elif ts.is_italic():
+                md += "_{}_".format(text)
+            else:
+                md += text
+        return md
 
 
 def TelegramThread(tg, bus):
