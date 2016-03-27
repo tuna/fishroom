@@ -87,6 +87,8 @@ class TextStyle(object):
     TextStyle option, including normal, color, italic, bold and underline
     """
 
+    # TODO: Add newline support
+
     NORMAL = 0
     COLOR = 1
     ITALIC = 2
@@ -264,14 +266,11 @@ class RichText(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def toIRC(self):
-        pass
+    def __getitem__(self, i):
+        return self.text[i]
 
-    def toTelegram(self):
-        pass
-
-    def toHTML(self):
-        pass
+    def __len__(self):
+        return len(self.text)
 
     def toPlain(self):
         return ''.join(i[1] for i in self.text)
