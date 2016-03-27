@@ -272,6 +272,9 @@ class RichText(object):
     def __len__(self):
         return len(self.text)
 
+    def __iter__(self):
+        yield from self.text
+
     def toPlain(self):
         return ''.join(i[1] for i in self.text)
 

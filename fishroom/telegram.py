@@ -585,7 +585,7 @@ class Telegram(BaseBotInstance):
     def formatRichText(self, rich_text: RichText):
         md = ""
         # telegram does not allow nested format
-        for ts, text in rich_text.text:
+        for ts, text in rich_text:
             if ts.is_bold():
                 md += "*{}*".format(text)
             elif ts.is_italic():

@@ -5,8 +5,10 @@ import irc
 import irc.client
 import random
 from .base import BaseBotInstance
-from .models import Message, ChannelType, MessageType
-from .textformat import TextFormatter
+from .models import (
+    Message, ChannelType, MessageType, RichText, TextStyle, Color
+)
+from .textformat import TextFormatter, IRCCtrl
 from .helpers import get_now_date_time
 from .config import config
 
@@ -112,11 +114,18 @@ class IRCHandle(BaseBotInstance):
     def on_nicknameinuse(self, conn, event):
         conn.nick(conn.get_nickname() + "_")
 
-    def msg_tmpl(self, sender=None, color=None, reply_quote="", reply_to=""):
+    def rich_message(self, content, sender=None, color=None, reply_quote=""):
         if color and sender:
-            return "\x03{color}[{sender}]\x0f {reply_quote}{content}"
+            return RichText([
+                (TextStyle(color=color), "[{}] ".format(sender)),
+                (TextStyle(color=Color(15)), "{}".format(reply_quote)),
+                (TextStyle(), "{}".format(content)),
+            ])
         else:
-            return "{content}" if sender is None else "[{sender}] {content}"
+            tmpl = "{content}" if sender is None else "[{sender}] {content}"
+            return RichText([
+                (TextStyle(), tmpl.format(content=content, sender=sender))
+            ])
 
     def send_msg(self, target, content, sender=None, first=False, **kwargs):
         # color that fits both dark and light background
@@ -128,20 +137,21 @@ class IRCHandle(BaseBotInstance):
             # background_num = sum([ord(i) for i in sender]) % 16
             cidx = sum([ord(i) for i in sender]) % len(color_avail)
             foreground_num = color_avail[cidx]
-            color = str(foreground_num)  # + ',' + str(background_num)
+            color = Color(foreground_num)  # + ',' + str(background_num)
 
-        tmpl = self.msg_tmpl(sender, color)
         reply_quote = ""
         if first and 'reply_text' in kwargs:
             reply_to = kwargs['reply_to']
             reply_text = kwargs['reply_text']
-            if len(reply_text) > 6:
-                reply_text = reply_text[:6] + '...'
-            reply_quote = "\x0315「Re {reply_to}: {reply_text}」\x0f".format(
+            if len(reply_text) > 8:
+                reply_text = reply_text[:8] + '...'
+            reply_quote = "「Re {reply_to}: {reply_text}」".format(
                 reply_text=reply_text, reply_to=reply_to)
 
-        msg = tmpl.format(sender=sender, content=content,
-                          reply_quote=reply_quote, color=color)
+        msg = self.rich_message(content, sender=sender, color=color,
+                                reply_quote=reply_quote)
+        msg = self.formatRichText(msg)
+        print(repr(msg))
 
         try:
             self.irc_conn.privmsg(target, msg)
@@ -149,6 +159,30 @@ class IRCHandle(BaseBotInstance):
             print("[irc] Server not connected")
             self.irc_conn.reconnect()
         time.sleep(0.5)
+
+    def formatRichText(self, rich_text: RichText):
+        formated_text = ""
+        for ts, text in rich_text:
+            if not text:
+                continue
+            if ts.is_normal():
+                formated_text += text
+                continue
+            ctrl = []
+            if ts.is_bold():
+                ctrl.append(IRCCtrl.BOLD)
+            if ts.is_italic():
+                ctrl.append(IRCCtrl.ITALIC)
+            if ts.is_underline():
+                ctrl.append(IRCCtrl.UNDERLINE)
+            if ts.has_color():
+                ctrl.append(IRCCtrl.COLOR)
+                if ts.color.bg:
+                    ctrl.append("{},{}".format(ts.color.fg, ts.color.bg))
+                else:
+                    ctrl.append("{}".format(ts.color.fg))
+            formated_text += "".join(ctrl) + text + IRCCtrl.RESET
+        return formated_text
 
     def send_to_bus(self, msg):
         raise Exception("Not implemented")
