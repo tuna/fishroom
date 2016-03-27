@@ -1,189 +1,182 @@
+"""
+This is for text formating
+
+IRC: https://github.com/myano/jenni/wiki/IRC-String-Formatting
+"""
+
 import unittest
+from .models import TextStyle, RichText, Color
 
 
-class Text(object):
-    def __init__(self, text):
-        self.text = text
+class IRCCtrl(object):
+    BOLD = '\x02'
+    COLOR = '\x03'
+    ITALIC = '\x1d'
+    UNDERLINE = '\x1f'
+    SWAPCOLOR = '\x16'
+    RESET = '\x0f'
+
+    _controls = set([BOLD, COLOR, ITALIC, UNDERLINE, SWAPCOLOR, RESET])
+    styles = {
+        BOLD: TextStyle.BOLD,
+        COLOR: TextStyle.COLOR,
+        ITALIC: TextStyle.ITALIC,
+        UNDERLINE: TextStyle.UNDERLINE,
+    }
 
     @classmethod
-    def fromIRC(cls, text):
+    def is_control(cls, t):
+        return t in cls._controls
+
+
+class TextFormatter(object):
+
+    @classmethod
+    def parseIRC(cls, text):
+        """
+        returns: Text object, with text field set to a list of (style, text)
+        """
+
+        if len(text) == 0:
+            return [(TextStyle.NORMAL, "")]
+
         formatted = []
-        controls = ['\x02', '\x03', '\x1d', '\x1f', '\x16', '\x0f']
-        current_str = ""
-        current_state = "normal"
-        if len(text) > 0:
-            c = text[0]
-            if c in controls:
-                current_state = "controls"
-        current_color_num = 0
+        cur_style = TextStyle()
+        cur_str = ""
+        color_fg, color_bg = "", None  # ANSI color number
 
-        def text_iter(text):
-            for index in range(len(text)):
-                if index == len(text) - 1:
-                    yield text[index], None
-                else:
-                    yield text[index], text[index + 1]
+        for (c, cn) in zip(text, list(text[1:])+[None]):
+            if IRCCtrl.is_control(c):
+                if cur_str:
+                    formatted.append((cur_style, cur_str))
+                    cur_str = ""
+                    cur_style = cur_style.copy()
 
-        for (c, cn) in text_iter(text):
-            if current_state == "controls":
                 if not cn:
-                    continue
-                if cn in controls:
-                    current_state = "controls"
-                    continue
-                if c == '\x03':
+                    break
+
+                if c not in (IRCCtrl.COLOR, IRCCtrl.SWAPCOLOR, IRCCtrl.RESET):
+                    # use bit xor to toggle style
+                    cur_style.toggle(IRCCtrl.styles[c])
+
+                elif c == IRCCtrl.COLOR:
+                    # color is set only if valid color option presents
                     if cn.isnumeric():
-                        current_state = "color"
-                        current_color_num = 1
+                        color_fg = cn  # should be expanded later
+                        cur_style.set(TextStyle.COLOR)
                     else:
-                        current_state = "normal"
-                elif c == "\x02":
-                    current_str = ""
-                    current_state = "bold"
-                continue
+                        color_fg, color_bg = "", None
+                        cur_style.clear(TextStyle.COLOR)
 
-            if current_state == "bold":
-                if c == '\x02':
-                    formatted.append((current_state, current_str))
-                    if cn in controls:
-                        current_str = ""
-                        current_state = "controls"
-                    else:
-                        current_str = ""
-                        current_state = "normal"
-                if c not in controls:
-                    current_str += c
-                continue
+                elif c == IRCCtrl.SWAPCOLOR:
+                    if cur_style.has_color:
+                        cur_style.color.swap()
 
-            if current_state == "color":
-                if c == '\x03':
-                    formatted.append((current_state, current_str))
-                    current_str = ""
+                elif c == IRCCtrl.RESET:
+                    cur_style = TextStyle()
+
+            else:
+                if color_fg:
+                    # read color number
+                    if color_bg is None:
+                        # reading color_fg
+                        if len(color_fg) == 1:
+                            if cn.isnumeric():
+                                color_fg += cn
+                            elif cn == ',':
+                                color_bg = ""
+                            else:
+                                cur_style.set_color(int(color_fg))
+                                color_fg, color_bg = "", None
+                        elif len(color_fg) == 2:
+                            if cn == ',':
+                                color_bg = ""
+                            else:
+                                cur_style.set_color(int(color_fg))
+                                color_fg, color_bg = "", None
+                    elif isinstance(color_bg, str):
+                        # reading color_bg
+                        if len(color_bg) == 0:
+                            if cn.isnumeric():
+                                color_bg = cn
+                            else:
+                                # "if the charter after ',' is not number"
+                                cur_style.set_color(int(color_fg))
+                                color_fg, color_bg = "", None
+                                cur_str = ","
+                        elif len(color_bg) == 1:
+                            if cn.isnumeric():
+                                color_bg += cn
+                            else:
+                                cur_style.set_color(
+                                    int(color_fg), int(color_bg))
+                                color_fg, color_bg = "", None
+                        elif len(color_bg) == 2:
+                            cur_style.set_color(int(color_fg), int(color_bg))
+                            color_fg, color_bg = "", None
+                else:
+                    # read normal text
+                    cur_str += c
                     if not cn:
-                        continue
-                    elif cn.isnumeric():
-                        current_color_num = 1
-                    elif cn in controls:
-                        current_state = "controls"
-                    else:
-                        current_state = "normal"
-                    continue
-                # xx,xx xxx
-                if current_color_num > 5 or current_color_num == 0:
-                    current_color_num = 0
-                    current_str += c
-                    if not cn:
-                        formatted.append((current_state, current_str))
-                elif current_color_num == 1:
-                    if cn and cn == ",":
-                        current_color_num = 3
-                    elif cn and not cn.isnumeric():
-                        current_color_num = 6
-                    else:
-                        current_color_num += 1
-                elif current_color_num == 2:
-                    if cn == ",":
-                        current_color_num += 1
-                    else:
-                        current_color_num = 6
-                elif current_color_num == 3:
-                    if cn and not cn.isnumeric():
-                        current_color_num = 6
-                    else:
-                        current_color_num += 1
-                elif current_color_num == 4:
-                    if cn and not cn.isnumeric():
-                        current_color_num = 6
-                    else:
-                        current_color_num += 1
-                elif current_color_num == 5:
-                    current_color_num += 1
-                continue
-            if current_state == "normal":
-                current_str += c
-                if not cn:
-                    formatted.append((current_state, current_str))
-                    continue
-                if cn in controls:
-                    formatted.append((current_state, current_str))
-                    current_str = ""
-                    current_state = "controls"
-                    continue
+                        formatted.append((cur_style, cur_str))
 
-        return Text(formatted)
+        return RichText(formatted)
 
     @classmethod
-    def fromTelgram(cls, text):
+    def parseTelgram(cls, text):
         pass
 
     @classmethod
-    def fromHTML(cls, text):
+    def parseHTML(cls, text):
         pass
-
-    def toIRC(self):
-        pass
-
-    def toTelegram(self):
-        pass
-
-    def toHTML(self):
-        pass
-
-    def toPlain(self):
-        return ''.join(i[1] for i in self.text)
-
-    def __eq__(self, other):
-        # print(self.text)
-        # print(other.text)
-        return (isinstance(other, self.__class__) and
-                self.text == other.text)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
 
 class TextTest(unittest.TestCase):
-    def test_eq(self):
-        self.assertEqual(Text([("normal", "Normal")]),
-                         Text([("normal", "Normal")]),
-                         "Class equal function")
 
-    def test_to_plain(self):
-        self.assertEqual(Text([
-            ("color", "Test1"), ("color", "Test2"), ("normal", "Test3")
-        ]).toPlain(), "Test1Test2Test3")
-
-    def test_paser_irc(self):
+    def test_parse_irc(self):
         test_cases = [
-            ("Test1", [("normal", "Test1")]),
-            ("\x03Test2", [("normal", "Test2")]),
-            ("\x03Test3\x03", [("normal", "Test3")]),
-            ("\x033", []),
-            ("\x033Test5", [("color", "Test5")]),
-            ("\x033Test6\x03", [("color", "Test6")]),
-            ("\x033,5Test7", [("color", "Test7")]),
-            ("\x033,5Test8\x03", [("color", "Test8")]),
-            ("\x033,05Test8\x03", [("color", "Test8")]),
-            ("\x0303,05Test8\x03", [("color", "Test8")]),
-            ("Test9\x03Test9", [("normal", "Test9"), ("normal", "Test9")]),
+            ("Test1", [(TextStyle(), "Test1")]),
+            ("\x03Test2", [(TextStyle(), "Test2")]),
+            ("\x03Test2\x03", [(TextStyle(), "Test2")]),
+            ("\x03", []),
+            ("\x033Test5", [(TextStyle(color=Color(3)), "Test5")]),
+            ("\x033Test6\x03", [(TextStyle(color=Color(3)), "Test6")]),
+            ("\x033,5Test7", [(TextStyle(color=Color(3, 5)), "Test7")]),
+            ("Test9\x03Test9", [(TextStyle(), "Test9"), (TextStyle(), "Test9")]),
             ("\x033,5Test10\x03Test10\x03Test10", [
-                ("color", "Test10"), ("normal", "Test10"), ("normal", "Test10")
+                (TextStyle(color=Color(3, 5)), "Test10"),
+                (TextStyle(), "Test10"),
+                (TextStyle(), "Test10"),
             ]),
-            ("\x033,5Test11\x034,5Test11\x03Test11", [
-                ("color", "Test11"), ("color", "Test11"), ("normal", "Test11")
+            ("\x033,5Test11\x0f\x02Test11\x03Test11", [
+                (TextStyle(color=Color(3, 5)), "Test11"),
+                (TextStyle(bold=1), "Test11"),
+                (TextStyle(bold=1), "Test11"),
             ]),
-            ("\x033,045Test12", [("color", "5Test12")]),
-            ("\x03123,045Test12", [("color", "3,045Test12")]),
-            ("\x02Test13\x02", [("bold", "Test13")]),
-            ("Test14\x02Test14\x02Test14", [
-                ("normal", "Test14"), ("bold", "Test14"), ("normal", "Test14")
+            ("\x033,045Test12", [(TextStyle(color=Color(3, 4)), "5Test12")]),
+            ("\x03123,045Test13", [(TextStyle(color=Color(12)), "3,045Test13")]),
+            ("Test14\x02\x034Test14\x02\x03Test14", [
+                (TextStyle(), "Test14"),
+                (TextStyle(bold=1, color=Color(4)), "Test14"),
+                (TextStyle(), "Test14")
             ]),
-            ("\x1d\x02Test15\x02", [("bold", "Test15")]),
-            ("\x1d\x02Test16\x02\x1d", [("bold", "Test16")]),
+            ("\x1d\x02Test15\x02\x1d", [(TextStyle(bold=1, italic=1), "Test15")]),
+            ("\x035,2Test16\x16Test16", [
+                (TextStyle(color=Color(5, 2)), "Test16"),
+                (TextStyle(color=Color(2, 5)), "Test16"),
+            ]),
+            ("Test17\x035,2Test17\x16\x02Test17\x0fTest17", [
+                (TextStyle(), "Test17"),
+                (TextStyle(color=Color(5, 2)), "Test17"),
+                (TextStyle(color=Color(2, 5), bold=1), "Test17"),
+                (TextStyle(), "Test17"),
+            ]),
         ]
         for (_input, output) in test_cases:
             with self.subTest(_input=_input, output=output):
-                self.assertEqual(Text.fromIRC(_input), Text(output))
+                self.assertEqual(
+                    TextFormatter.parseIRC(_input), RichText(output)
+                )
 
 
 if __name__ == '__main__':
