@@ -151,8 +151,6 @@ class IRCHandle(BaseBotInstance):
         msg = self.rich_message(content, sender=sender, color=color,
                                 reply_quote=reply_quote)
         msg = self.formatRichText(msg)
-        print(repr(msg))
-
         try:
             self.irc_conn.privmsg(target, msg)
         except irc.client.ServerNotConnectedError:

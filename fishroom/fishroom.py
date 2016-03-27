@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import re
+import os
+import signal
 import threading
+import time
 
 from .bus import MessageBus
-from .models import MessageType, Message
+from .models import MessageType, Message, ChannelType
 from .chatlogger import ChatLogger
 from .counter import Counter
 from .filestore import QiniuStore
@@ -248,22 +251,56 @@ def main():
     text_store = init_text_store()
     tasks = []
 
+    DEAD = threading.Event()
+
+    def die(f):
+        def send_all(text):
+            for _, b in config["bindings"].items():
+                for c, to in b.items():
+                    if c == ChannelType.Telegram:
+                        h = tghandle
+                    elif c == ChannelType.IRC:
+                        h = irchandle
+                    elif c == ChannelType.XMPP:
+                        h = xmpphandle
+                    try:
+                        h.send_msg(to, text)
+                    except:
+                        pass
+
+        def wrapper(*args, **kwargs):
+            try:
+                f(*args, **kwargs)
+            except:
+                DEAD.set()
+                send_all("Bug Trapped! Save Me! 😱  ")
+                print("[Traceback]")
+                import traceback
+                traceback.print_exc()
+
+        return wrapper
+
     for target, args in (
-            (TelegramThread, (tghandle, message_bus), ),
-            (IRCThread, (irchandle, message_bus), ),
-            (XMPPThread, (xmpphandle, message_bus), ),
-            (
-                ForwardingThread,
-                ((tghandle, irchandle, xmpphandle, ), text_store, ),
-            ),
+        (TelegramThread, (tghandle, message_bus, ), ),
+        (IRCThread, (irchandle, message_bus, ), ),
+        (XMPPThread, (xmpphandle, message_bus, ), ),
+        (
+            ForwardingThread,
+            ((tghandle, irchandle, xmpphandle, ), text_store, ),
+        ),
     ):
-        t = threading.Thread(target=target, args=args)
+        t = threading.Thread(target=die(target), args=args)
         t.setDaemon(True)
         t.start()
         tasks.append(t)
 
-    for t in tasks:
-        t.join()
+    DEAD.wait()
+    print("Everybody Died, I don't wanna live any more! T_T")
+
+    time.sleep(2)
+    os.kill(os.getpid(), signal.SIGTERM)
+    time.sleep(2)
+    os.kill(os.getpid(), signal.SIGKILL)
 
 if __name__ == "__main__":
     main()
