@@ -171,6 +171,26 @@ class TextTest(unittest.TestCase):
                 (TextStyle(color=Color(2, 5), bold=1), "Test17"),
                 (TextStyle(), "Test17"),
             ]),
+            (
+                ("bigeagle: \x0304errors:\x0f source_file.java:1: error: class,"
+                 "interface, or enum expected\x0304\\n\x0f print(1)"
+                 "\x0304\\n\x0f ^\x0304\\n\x0f 1 error"),
+                [
+                    (TextStyle(), "bigeagle: "),
+                    (TextStyle(color=Color(4)), "errors:"),
+                    (TextStyle(), (
+                        " source_file.java:1: error: class,"
+                        "interface, or enum expected"
+                    )),
+                    (TextStyle(color=Color(4)), "\\n"),
+                    (TextStyle(), " print(1)"),
+                    (TextStyle(color=Color(4)), "\\n"),
+                    (TextStyle(), " ^"),
+                    (TextStyle(color=Color(4)), "\\n"),
+                    (TextStyle(), " 1 error"),
+                ]
+             ),
+
         ]
         for (_input, output) in test_cases:
             with self.subTest(_input=_input, output=output):

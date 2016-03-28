@@ -7,11 +7,15 @@ import requests
 import requests.exceptions
 import mimetypes
 import magic
+import html
+import unittest
 from collections import namedtuple
 from .base import BaseBotInstance
 from .photostore import BasePhotoStore
 from .filestore import BaseFileStore
-from .models import Message, ChannelType, MessageType, RichText, TextStyle
+from .models import (
+    Message, ChannelType, MessageType, RichText, TextStyle, Color
+)
 from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
 from .config import config
 
@@ -564,7 +568,9 @@ class Telegram(BaseBotInstance):
         if rich_text:
             content = self.formatRichText(rich_text)
         elif escape:
-            content = re.sub(r'([\[\*_])', r'\\\1', content)
+            content = html.escape(content)
+
+        # print(repr(content))
 
         tmpl = self.msg_tmpl(sender)
         api = self.api_base + "/sendMessage"
@@ -572,7 +578,7 @@ class Telegram(BaseBotInstance):
         data = {
             'chat_id': int(peer),
             'text': tmpl.format(sender=sender, content=content),
-            'parse_mode': 'Markdown',
+            'parse_mode': 'HTML',
         }
         if 'telegram' in kwargs:
             for k, v in kwargs['telegram'].items():
@@ -580,16 +586,17 @@ class Telegram(BaseBotInstance):
         self._must_post(api, json=data)
 
     def msg_tmpl(self, sender=None):
-        return "{content}" if sender is None else "*[{sender}]* {content}"
+        return "{content}" if sender is None else "<b>[{sender}]</b> {content}"
 
-    def formatRichText(self, rich_text: RichText):
+    @classmethod
+    def formatRichText(cls, rich_text: RichText):
         md = ""
         # telegram does not allow nested format
         for ts, text in rich_text:
             if ts.is_bold():
-                md += "*{}*".format(text)
+                md += "<b>{}</b>".format(text)
             elif ts.is_italic():
-                md += "_{}_".format(text)
+                md += "<i>{}</i>".format(text)
             else:
                 md += text
         return md
@@ -601,7 +608,41 @@ def TelegramThread(tg, bus, ):
         bus.publish(msg)
 
 
+class TestRichText(unittest.TestCase):
+
+    def test_rich_text_format(self):
+        test_cases = [
+            ([
+                (TextStyle(), "bigeagle: "),
+                (TextStyle(color=Color(4)), "errors:"),
+                (TextStyle(), (
+                    " source_file.java:1: error: class,"
+                    "interface, or enum expected"
+                )),
+                (TextStyle(color=Color(4)), "\\n"),
+                (TextStyle(), " print(1)"),
+                (TextStyle(color=Color(4)), "\\n"),
+                (TextStyle(), " ^"),
+                (TextStyle(color=Color(4)), "\\n"),
+                (TextStyle(), " 1 error"),
+            ], (
+                "bigeagle: errors: source_file.java:1: error: class,"
+                "interface, or enum expected\\n print(1)\\n ^\\n 1 error")
+            )
+        ]
+
+        for (_input, output) in test_cases:
+            with self.subTest(_input=_input, output=output):
+                # print(TextFormatter.parseIRC(_input))
+                self.assertEqual(
+                    Telegram.formatRichText(RichText(_input)), output
+                )
+
+
 if __name__ == '__main__':
+
+    unittest.main()
+
     from .photostore import VimCN
 
     tele = Telegram(config['telegram']['token'],
