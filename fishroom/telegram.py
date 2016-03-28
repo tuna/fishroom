@@ -566,7 +566,7 @@ class Telegram(BaseBotInstance):
             content = r.sub(r'\g<pre>@{}\g<post>'.format(username), content)
 
         if rich_text:
-            content = self.formatRichText(rich_text)
+            content = self.formatRichText(rich_text, escape=escape)
         elif escape:
             content = html.escape(content)
 
@@ -589,10 +589,12 @@ class Telegram(BaseBotInstance):
         return "{content}" if sender is None else "<b>[{sender}]</b> {content}"
 
     @classmethod
-    def formatRichText(cls, rich_text: RichText):
+    def formatRichText(cls, rich_text: RichText, escape=True):
         md = ""
         # telegram does not allow nested format
         for ts, text in rich_text:
+            if escape:
+                text = html.escape(text)
             if ts.is_bold():
                 md += "<b>{}</b>".format(text)
             elif ts.is_italic():
