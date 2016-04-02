@@ -235,6 +235,8 @@ class Telegram(BaseBotInstance):
             return r.content
 
     def upload_photo(self, file_id):
+        if not self.photo_store:
+            return None, "No photo store available"
         photo = self.download_file(file_id)
         if photo is None:
             return None, "teleboto Faild to download file"
@@ -247,9 +249,13 @@ class Telegram(BaseBotInstance):
         return url, None
 
     def upload_sticker(self, file_id):
-        url = self.sticker_url_store.get_sticker(file_id)
-        if url is not None:
-            return url, None
+        if self.sticker_url_store:
+            url = self.sticker_url_store.get_sticker(file_id)
+            if url is not None:
+                return url, None
+
+        if not self.photo_store:
+            return None, "Unable to upload photo"
 
         sticker = self.download_file(file_id)
         print("[Telegram] uploading sticker {}".format(file_id))
@@ -257,21 +263,26 @@ class Telegram(BaseBotInstance):
         if sticker is None:
             return None, "teleboto failed to download file"
 
-        m = md5(sticker)
-        url = self.sticker_url_store.get_sticker(m)
-        if url is not None:
-            return url, None
+        if self.sticker_url_store:
+            m = md5(sticker)
+            url = self.sticker_url_store.get_sticker(m)
+            if url is not None:
+                return url, None
 
         photo = webp2png(sticker)
         url = self.photo_store.upload_image(filedata=photo, tag="sticker")
         if url is None:
             return None, "Failed to upload Image"
 
-        self.sticker_url_store.set_sticker(file_id, url)
-        self.sticker_url_store.set_sticker(m, url)
+        if self.sticker_url_store:
+            self.sticker_url_store.set_sticker(file_id, url)
+            self.sticker_url_store.set_sticker(m, url)
         return url, None
 
     def upload_document(self, doc, filetype="file"):
+        if not self.file_store:
+            return None, "No file store available"
+
         filedata = self.download_file(doc["file_id"])
         if filedata is None:
             return None, "teleboto Faild to download file"
@@ -286,6 +297,9 @@ class Telegram(BaseBotInstance):
         return url, None
 
     def upload_audio(self, file_id, mime):
+        if not self.file_store:
+            return None, "No file store available"
+
         filedata = self.download_file(file_id)
         if filedata is None:
             return None, "teleboto Faild to download file"
