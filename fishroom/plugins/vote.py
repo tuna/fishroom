@@ -132,7 +132,7 @@ votemarks = ['⭐', '👍', '❤ ', '☀', ]
 @command("vote", desc="Vote plugin",
          usage="\n"
          "vote: show current vote\n"
-         "vote new '<topic>': create new vote\n"
+         "vote new '<topic>' [ -- 'option' ... ]: create new vote\n"
          "vote add '<option>': add vote option\n"
          "vote start: start voting\n"
          "vote <num>: vote for option num\n"
@@ -174,7 +174,17 @@ def vote(cmd, *args, **kwargs):
     subcmd = args.pop(0)
 
     sender = msg.sender
-    if subcmd == "new":
+    if subcmd in ("new", "create"):
+        options = None
+        if '--' in args:
+            i = args.index('--')
+            options = args[i+1:]
+            args = args[:i]
+        elif '—' in args:
+            i = args.index('—')
+            options = args[i+1:]
+            args = args[:i]
+
         topic = ' '.join(args)
         if not topic:
             return "use /vote new <topic> to set topic"
@@ -182,6 +192,12 @@ def vote(cmd, *args, **kwargs):
             _vote_mgr.new_vote(room, topic)
         except VoteExisted:
             return "There is an on-going voting, end it before creating new."
+
+        if options:
+            for opt in options:
+                _vote_mgr.add_option(room, opt)
+            _vote_mgr.start_vote(room)
+            return get_result(room, start=True)
 
         return (
             "👍 {} created vote: {}\n"
@@ -215,7 +231,7 @@ def vote(cmd, *args, **kwargs):
         topic, _, options, _ = _vote_mgr.get_vote(room)
         return get_result(room, start=True)
 
-    elif subcmd == "end":
+    elif subcmd in ("end", "stop"):
         ret = "❤  End vote, final result: \n" + get_result(room, end=True)
         _vote_mgr.end_vote(room)
         return ret
