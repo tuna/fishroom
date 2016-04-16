@@ -255,28 +255,23 @@ def main():
 
     def die(f):
         def send_all(text):
-            for _, b in config["bindings"].items():
-                for c, to in b.items():
-                    if c == ChannelType.Telegram:
-                        h = tghandle
-                    elif c == ChannelType.IRC:
-                        h = irchandle
-                    elif c == ChannelType.XMPP:
-                        h = xmpphandle
-                    try:
-                        h.send_msg(to, text)
-                    except:
-                        pass
+            for adm_id in config["telegram"]["admin"]:
+                try:
+                    tghandle.send_msg(adm_id, text, escape=False)
+                except:
+                    pass
 
         def wrapper(*args, **kwargs):
             try:
                 f(*args, **kwargs)
             except:
-                DEAD.set()
                 send_all("Bug Trapped! Save Me! 😱  ")
                 print("[Traceback]")
                 import traceback
-                traceback.print_exc()
+                exc = traceback.format_exc()
+                send_all("<code>%s</code>" % exc)
+                print(exc)
+                DEAD.set()
 
         return wrapper
 
