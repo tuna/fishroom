@@ -104,8 +104,8 @@ class ChatLogHandler(tornado.web.RequestHandler):
             msgs = [json.loads(jmsg.decode("utf-8")) for jmsg in logs]
             for i, m in zip(range(start, last+1), msgs):
                 m['id'] = i
-                m.pop('opt')
-                m.pop('receiver')
+                m.pop('opt', None)
+                m.pop('receiver', None)
             self.set_header("Content-Type", "application/json")
             self.write(json.dumps(msgs))
             self.finish()
