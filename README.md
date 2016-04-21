@@ -1,5 +1,7 @@
 # fishroom
 ![](https://img.shields.io/badge/license-AGPL-blue.svg)
+![Proudly Powered by Python3](https://img.shields.io/badge/python-3.4%2C3.5-blue.svg)
+[![](https://img.shields.io/badge/%23chat-fishroom-brightgreen.svg)](https://fishroom.tuna.moe/)
 
 Message forwarding for multiple IM protocols
 
