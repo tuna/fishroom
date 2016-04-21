@@ -53,6 +53,8 @@ def init_text_store():
 
 
 def get_qiniu():
+    if 'qiniu' not in config:
+        return None
 
     if 'qiniu' not in single_instances:
         c = config['qiniu']

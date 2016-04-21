@@ -1,11 +1,12 @@
 config = {
     'debug': True,
     'timezone': 'Asia/Shanghai',
-    'baseurl': 'http://localhost:8000',  # do not end with "/"
+    'baseurl': 'http://fishroom.example.com',  # do not end with "/"
     'name': 'teleboto',
+    'cmd_me': 'tg_bot',  # username of the telegram bot
 
     'redis': {
-        "host": "127.0.0.1",
+        "host": "redis-host",  # hostname for redis servere
         "port": 6379,
         "prefix": "fishroom",
     },
@@ -13,7 +14,7 @@ config = {
     'irc': {
         'server': 'irc.freenode.net',
         'port': 6697,
-        'nick': 'XiaoT',
+        'nick': 'XiaoT',       # IRC nick name
         'ssl': True,
         'blacklist': [
             '[Olaf]',
@@ -22,9 +23,8 @@ config = {
 
     'telegram': {
         'token': '',  # get this from @BotFather
-        'server': "127.0.0.1",
-        'port': 27219,
-        'me': [],  # token_id and tg user id
+        'me': None,
+        'admin': [],  # admin id (integer)
     },
 
     'xmpp': {
@@ -35,6 +35,8 @@ config = {
         'nick': 'XiaoT',
     },
 
+    # Optional, only if you use qiniu for file_store
+    # Comment this out if you don't use qiniu
     'qiniu': {
         'access_key': '',
         'secret_key': '',
@@ -49,7 +51,14 @@ config = {
             'client_id': "",
         }
     },
- 
+
+    # this is the web interface
+    'chatlog': {
+        'port': 8000,
+        'default_channel': 'teleboto-dev',
+    },
+
+    # Comment this out if you don't use qiniu
     'file_store': {
         'provider': "qiniu",
     },
@@ -61,13 +70,13 @@ config = {
     },
 
     'plugins': [
-        'pia', 'imglink', 'vote'
+        'pia', 'imglink', 'vote', 'hualao'
     ],
 
     'bindings': {
         "archlinux-cn": {
             "irc": '#archlinux-cn',
-            "telegram": 'chat#12889958',
+            "telegram": "-1001031857103",
             "xmpp": 'chat@conference.xmpp.jp'
         }
     }
