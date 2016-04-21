@@ -1,4 +1,6 @@
 # fishroom
+![](https://img.shields.io/badge/license-AGPL-blue.svg)
+
 Message forwarding for multiple IM protocols
 
 ## Motivation
@@ -15,15 +17,98 @@ big party again.
 - IRC
 - XMPP
 - Telegram
+- Gitter (not yet)
+- Actor (not yet)
 - Tox (not yet)
 - Wechat (maybe)
 
-## TODO
+## How to Use
 
-- [x] Implement Telegram protocol using Telegram Bot API
-- [x] Plugin system
-- [x] Chat with Bots
-- [x] Convert `^nickname:` and `@nickname` to `@username`
+Clone me first
+```
+git clone https://github.com/tuna/fishroom
+cd fishroom
+```
+
+### Docker Rocks!
+
+Get a redis docker and run it:
+
+```
+docker pull redis:alpine
+docker run --name redis -v /var/lib/redis:/data -d redis:alpine
+```
+
+Modify the config file, and remember the redis hostname you specified in `config.py`.
+I suggest that just use `redis` as the hostname.
+
+```bash
+mv fishroom/config.py.example fishroom/config.py
+vim fishroom/config.py
+```
+
+Modify `Dockerfile`, you may want to change the `sources.list` content.
+Build the docker for fishroom:
+
+```
+docker build --tag fishroom:dev .
+```
+
+Since the code of fishroom often changes, we mount the code as a volume, and link redis to it.
+
+You can test it using
+```
+docker run -it --rm fishroom --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
+```
+
+If everything works, we run it as daemon.
+```
+docker run -d --name fishroom --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
+```
+
+To view the logs, use
+```
+docker logs fishroom
+```
+
+Next we run the web interface, if you have configured the `chat_logger` part in `config.py`.
+```
+docker run -d --name fishroom-web --link redis:redis -p 127.0.0.1:8000:8000 -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom_web
+```
+Open your browser, and visit <http://127.0.0.1:8000/>, you should be able to view the web UI of fishoom.
+
+
+### Docker Sucks!
+
+Install and run redis first, assuming you use ubuntu or debian.
+
+```
+apt-get install redis
+```
+
+Modify the config file, the redis server should be on addr `127.0.0.1` and port `6379`.
+
+```bash
+mv fishroom/config.py.example fishroom/config.py
+vim fishroom/config.py
+```
+
+Ensure your python version is at least 3.4, next, we install the dependencies for fishroom.
+
+```
+apt-get install -y python3-dev python3-pip libmagic1 libjpeg-dev libpng-dev libwebp-dev zlib1g-dev gcc
+pip3 install --upgrade pip setuptools
+pip3 install -r requirements.txt
+```
+
+Run fishroom and fishroom web.
+```
+python3 -m fishroom.fishroom
+python3 -m fishroom.fishroom_web
+```
+Open your browser, and visit <http://127.0.0.1:8000/>, you should be able to view the web UI of fishoom.
+
+Good Luck!
 
 ## Related Projects
 
