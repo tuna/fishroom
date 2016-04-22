@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-import os
+import os, sys
 import signal
 import threading
 import time
@@ -293,11 +293,7 @@ def main():
 
     DEAD.wait()
     print("Everybody Died, I don't wanna live any more! T_T")
-
-    time.sleep(2)
-    os.kill(os.getpid(), signal.SIGTERM)
-    time.sleep(2)
-    os.kill(os.getpid(), signal.SIGKILL)
+    os._exit(1)
 
 if __name__ == "__main__":
     main()
