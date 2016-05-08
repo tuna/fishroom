@@ -52,7 +52,8 @@ def hualao(cmd, *args, **kwargs):
     avg_person = total / talked
     avg_second = total / seconds
 
-    msg = "Total {} messages in the past {} days\n".format(total, days)
+    msg = "Total {} messages in the past {} day{}\n".format(total, days,
+            "s" if days > 1 else "")
     msg += "Average {:.2f}/person, {:.2f}/second".format(avg_person, avg_second)
 
     return msg
