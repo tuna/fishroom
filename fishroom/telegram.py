@@ -307,6 +307,8 @@ class Telegram(BaseBotInstance):
         if mime is None:
             mime = magic.from_buffer(filedata, mime=True).decode('utf-8')
         ext = mimetypes.guess_extension(mime)
+        if ext is None:
+            raise Exception("Failed to guess ext from mime: %s" % mime)
         filename = "voice" + ext
         url = self.file_store.upload_file(filedata, filename, filetype="audio")
         if url is None:
