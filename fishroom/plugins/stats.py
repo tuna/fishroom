@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from ..db import get_redis
 from ..command import command
 from ..models import Message
-from ..helpers import get_now, tz
+from ..helpers import get_now, tz, plural
 from ..chatlogger import ChatLogger
 from .ratelimit import RateLimiter
 
@@ -52,8 +52,8 @@ def hualao(cmd, *args, **kwargs):
     avg_person = total / talked
     avg_second = total / seconds
 
-    msg = "Total {} messages in the past {} day{}\n".format(total, days,
-            "s" if days > 1 else "")
+    msg = "Total {} in the past {}\n".format(
+        plural(total, "message"), plural(days, "day"))
     msg += "Average {:.2f}/person, {:.2f}/second".format(avg_person, avg_second)
 
     return msg
