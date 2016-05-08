@@ -212,7 +212,7 @@ def ForwardingThread(channels, text_store):
             contents = [text_url + " (long text)", ]
         else:
             contents = [
-                line for line in msg.content.split("\n")
+                line for line in msg.content.splitlines()
                 if not re.match(r'^\s*$', line)
             ]
 
