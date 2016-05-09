@@ -54,12 +54,12 @@ def download_file(url):
     return (r.content, r.headers.get('content-type'))
 
 
-def plural(number: int, origin: str, plurals: str=None):
+def plural(number: int, origin: str, plurals: str=None) -> str:
     # need lots of check, or not?
     if not plurals:
         plurals = origin + "s"
 
-    if number > 1:
+    if number != 1:
         return "{} {}".format(number, plurals)
     else:
         return "{} {}".format(number, origin)
