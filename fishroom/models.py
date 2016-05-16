@@ -10,6 +10,7 @@ class ChannelType(object):
     XMPP = "xmpp"
     IRC = "irc"
     Telegram = "telegram"
+    Gitter = "gitter"
     Web = "web"
     API = "api"
 

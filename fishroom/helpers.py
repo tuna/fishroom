@@ -3,6 +3,7 @@ import pytz
 import requests
 import hashlib
 from datetime import datetime
+from dateutil import parser
 from io import BytesIO
 from PIL import Image
 from .config import config
@@ -21,6 +22,11 @@ def get_now_date_time():
 
 def timestamp_date_time(ts):
     d = datetime.fromtimestamp(ts, tz=tz)
+    return d.strftime("%Y-%m-%d"), d.strftime("%H:%M:%S")
+
+
+def string_date_time(dstr):
+    d = parser.parse(dstr).astimezone(tz)
     return d.strftime("%Y-%m-%d"), d.strftime("%H:%M:%S")
 
 

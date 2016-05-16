@@ -35,6 +35,11 @@ config = {
         'nick': 'XiaoT',
     },
 
+    'gitter': {
+        'token': '',
+        'me': '',  # bot username
+    },
+
     # Optional, only if you use qiniu for file_store
     # Comment this out if you don't use qiniu
     'qiniu': {

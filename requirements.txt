@@ -9,3 +9,5 @@ sleekxmpp
 pillow
 qiniu
 python-magic
+dateutils
+aiohttp

@@ -17,6 +17,7 @@ from .telegram import (RedisNickStore, RedisStickerURLStore,
 # from .telegram_tg import TgTelegram, TgTelegramThread
 from .irchandle import IRCHandle, IRCThread
 from .xmpp import XMPPHandle, XMPPThread
+from .gitter import Gitter, GitterThread
 from .api_client import APIClientManager
 from .command import get_command_handler, parse_command
 from .helpers import download_file
@@ -118,6 +119,14 @@ def init_xmpp():
     jid = config['xmpp']['jid']
     password = config['xmpp']['password']
     return XMPPHandle(server, port, jid, password, rooms, nickname)
+
+
+def init_gitter():
+    rooms = [b["gitter"] for _, b in config['bindings'].items() if 'gitter' in b]
+    token = config['gitter']['token']
+    me = config['gitter']['me']
+
+    return Gitter(token, rooms, me)
 
 
 def ForwardingThread(channels, text_store):
@@ -233,14 +242,14 @@ def ForwardingThread(channels, text_store):
             if c.SupportMultiline:
                 sender = None if msg.botmsg else msg.sender
                 c.send_msg(target, msg.content, sender=sender,
-                           rich_text=msg.rich_text, **msg.opt)
+                           rich_text=msg.rich_text, raw=msg, **msg.opt)
                 continue
 
             for i, line in enumerate(contents):
                 sender = None if msg.botmsg else msg.sender
                 c.send_msg(target, content=line, sender=sender,
                            rich_text=msg.rich_text, first=(i == 0),
-                           **msg.opt)
+                           raw=msg, **msg.opt)
 
 
 def main():
@@ -251,6 +260,7 @@ def main():
     tghandle = init_telegram()
     xmpphandle = init_xmpp()
     text_store = init_text_store()
+    gitter_handle = init_gitter()
     tasks = []
 
     DEAD = threading.Event()
@@ -281,9 +291,10 @@ def main():
         (TelegramThread, (tghandle, message_bus, ), ),
         (IRCThread, (irchandle, message_bus, ), ),
         (XMPPThread, (xmpphandle, message_bus, ), ),
+        (GitterThread, (gitter_handle, message_bus, ), ),
         (
             ForwardingThread,
-            ((tghandle, irchandle, xmpphandle, ), text_store, ),
+            ((tghandle, irchandle, xmpphandle, gitter_handle), text_store, ),
         ),
     ):
         t = threading.Thread(target=die(target), args=args)

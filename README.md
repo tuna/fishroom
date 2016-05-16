@@ -19,7 +19,7 @@ big party again.
 - IRC
 - XMPP
 - Telegram
-- Gitter (not yet)
+- Gitter
 - Actor (not yet)
 - Tox (not yet)
 - Wechat (maybe)
@@ -60,7 +60,7 @@ Since the code of fishroom often changes, we mount the code as a volume, and lin
 
 You can test it using
 ```
-docker run -it --rm fishroom --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
+docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
 ```
 
 If everything works, we run it as daemon.
