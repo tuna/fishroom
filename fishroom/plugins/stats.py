@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from ..db import get_redis
 from ..command import command
 from ..models import Message
-from ..helpers import get_now, tz
+from ..helpers import get_now, tz, plural
 from ..chatlogger import ChatLogger
 from .ratelimit import RateLimiter
 
@@ -45,15 +45,16 @@ def hualao(cmd, *args, **kwargs):
         day -= timedelta(days=1)
 
     talked = len(senders)
-    today_seconds = (today - datetime(today.year, today.month, today.day,
-        0, 0, 0, 0, tz)).total_seconds()
+    today_seconds = (
+        today - datetime(today.year, today.month, today.day, 0, 0, 0, 0, tz)
+    ).total_seconds()
     seconds = 86400 * (days - 1) + today_seconds
 
     avg_person = total / talked
     avg_second = total / seconds
 
-    msg = "Total {} people produced {} messages in the past {} day{}\n".format(
-            talked, total, days, "s" if days > 1 else "")
+    msg = "Total {} in the past {}\n".format(
+        plural(total, "message"), plural(days, "day"))
     msg += "Average {:.2f}/person, {:.2f}/second".format(avg_person, avg_second)
 
     return msg

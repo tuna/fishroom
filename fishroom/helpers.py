@@ -60,4 +60,14 @@ def download_file(url):
     return (r.content, r.headers.get('content-type'))
 
 
+def plural(number: int, origin: str, plurals: str=None) -> str:
+    # need lots of check, or not?
+    if not plurals:
+        plurals = origin + "s"
+
+    if number != 1:
+        return "{} {}".format(number, plurals)
+    else:
+        return "{} {}".format(number, origin)
+
 # vim: ts=4 sw=4 sts=4 expandtab
