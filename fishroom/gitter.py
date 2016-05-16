@@ -85,7 +85,7 @@ class Gitter(BaseBotInstance):
     def send_msg(self, target, content, sender=None, raw=None, **kwargs):
         url = self._post_api.format(room=target)
         if sender:
-            sender = re.sub(r'([\[\*_])', r'\\\1', sender)
+            sender = re.sub(r'([\[\*_#])', r'\\\1', sender)
 
         text = "**[{sender}]** {content}" if sender else "{content}"
 
