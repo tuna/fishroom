@@ -76,9 +76,14 @@ class Gitter(BaseBotInstance):
         from_user = jmsg['fromUser']['username']
         content = jmsg['text']
         date, time = string_date_time(jmsg['sent'])
+
+        mtype = MessageType.Command \
+            if self.is_cmd(content) \
+            else MessageType.Text
+
         return Message(
             ChannelType.Gitter,
-            from_user, room, content, MessageType.Text,
+            from_user, room, content, mtype,
             date=date, time=time, media_url=None, opt={}
         )
 
