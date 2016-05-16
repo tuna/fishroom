@@ -544,6 +544,9 @@ class Telegram(BaseBotInstance):
         if cmd == "nick":
             if len(args) == 1:
                 nick = args[0]
+                if not re.match(r'^\w', nick, flags=re.UNICODE):
+                    self.send_msg(target, "Use a human's nick name, please.")
+                    return True
                 self.nick_store.set_nickname(user_id, nick)
                 content = "Changed nickname to '%s'" % nick
                 print(target, content)
