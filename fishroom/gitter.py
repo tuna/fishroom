@@ -92,6 +92,14 @@ class Gitter(BaseBotInstance):
         if sender:
             sender = re.sub(r'([\[\*_#])', r'\\\1', sender)
 
+        reply = ""
+        if 'reply_text' in kwargs:
+            reply_to = kwargs['reply_to']
+            reply_text = kwargs['reply_text'].splitlines()[0]
+            reply = "> [{reply_to}] {reply_text}\n\n".format(
+                reply_to=reply_to, reply_text=reply_text,
+            )
+
         text = "**[{sender}]** {content}" if sender else "{content}"
 
         if raw is not None:
@@ -99,7 +107,7 @@ class Gitter(BaseBotInstance):
                 content = "%s\n![](%s)" % (raw.mtype, raw.media_url)
 
         j = {
-            'text': text.format(sender=sender, content=content)
+            'text': reply + text.format(sender=sender, content=content)
         }
 
         self._must_post(url, json=j, headers=self.headers)
