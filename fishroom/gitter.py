@@ -95,10 +95,18 @@ class Gitter(BaseBotInstance):
         reply = ""
         if 'reply_text' in kwargs:
             reply_to = kwargs['reply_to']
-            reply_text = kwargs['reply_text'].splitlines()[0]
-            reply = "> [{reply_to}] {reply_text}\n\n".format(
-                reply_to=reply_to, reply_text=reply_text,
-            )
+            reply_text_lines = kwargs['reply_text'].splitlines()
+            if len(reply_text_lines) > 0:
+                for line in reply_text_lines:
+                    if not line.startswith(">"):
+                        reply_text = line
+                        break
+                else:
+                    reply_text = reply_text_lines[0]
+
+                reply = "> [{reply_to}] {reply_text}\n\n".format(
+                    reply_to=reply_to, reply_text=reply_text,
+                )
 
         text = "**[{sender}]** {content}" if sender else "{content}"
 
