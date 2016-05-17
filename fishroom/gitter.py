@@ -56,7 +56,7 @@ class Gitter(BaseBotInstance):
         while True:
             # print("polling on url %s" % url)
             try:
-                with aiohttp.Timeout(60):
+                with aiohttp.Timeout(300):
                     async with session.get(url, headers=self.headers) as resp:
                         while True:
                             line = await resp.content.readline()
