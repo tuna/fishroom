@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 from datetime import datetime, timedelta
+from collections import Counter
+from statistics import mean, stdev
 
 from ..db import get_redis
 from ..command import command
@@ -35,27 +37,33 @@ def hualao(cmd, *args, **kwargs):
     days = min(days, 21)
 
     total = 0
-    senders = set()
     today = get_now()
     day = today
+    c = Counter()
     for _ in range(days):
         key = log_key_tmpl.format(date=day.strftime("%Y-%m-%d"), channel=room)
-        senders.update(Message.loads(bmsg).sender for bmsg in r.lrange(key, 0, -1))
-        total += r.llen(key)
+        senders = [Message.loads(bmsg).sender for bmsg in r.lrange(key, 0, -1)]
+        c.update(senders)
         day -= timedelta(days=1)
 
-    talked = len(senders)
     today_seconds = (
         today - datetime(today.year, today.month, today.day, 0, 0, 0, 0, tz)
     ).total_seconds()
     seconds = 86400 * (days - 1) + today_seconds
 
-    avg_person = total / talked
+    mean_person = mean(c.values())
+    std_person = stdev(c.values())
+
+    total = sum(c.values())
     avg_second = total / seconds
 
     msg = "Total {} in the past {}\n".format(
         plural(total, "message"), plural(days, "day"))
-    msg += "Average {:.2f}/person, {:.2f}/second".format(avg_person, avg_second)
+    msg += "Mean {:.2f} +/− {:.2f} per person , {:.2f} per second".format(
+        mean_person,
+        std_person,
+        avg_second
+    )
 
     return msg
 
