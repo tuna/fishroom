@@ -8,10 +8,10 @@ Message forwarding for multiple IM protocols
 ## Motivation
 TUNA needs a chatroom, while each IM protocol/software has its own implementation for chatroom.
 
-Unlike email and mailing list, instant messaging is fragmented and everybody has different preferred software.
-As a result, TUNA as a group of people, was splitted into IRC users, wechat users, telegram users, XMPP users, etc.
+Unlike email and mailing list, instant messaging is fragmented: everyone prefers different softwares.
+As a result, people of TUNA are divided by the IM they use, be it IRC, wechat, telegram, or XMPP.
 
-To reunify TUNA, we created this project to synchronize messages between IM clients, so that people can enjoy a
+To reunify TUNA, we created this project to relay messages between IM clients, so that people can enjoy a
 big party again.
 
 ## Supported IMs
