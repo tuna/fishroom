@@ -487,7 +487,14 @@ class Telegram(BaseBotInstance):
 
             for update in ret["result"]:
                 offset = update["update_id"] + 1
-                jmsg = update["message"]
+                edited = False
+                if "message" in update:
+                    jmsg = update["message"]
+                elif "edited_message" in update:
+                    jmsg = update["edited_message"]
+                    edited = True
+                else:
+                    continue
 
                 telemsg = self.parse_jmsg(jmsg)
                 if telemsg is None or telemsg.user_id in id_blacklist:
@@ -518,6 +525,9 @@ class Telegram(BaseBotInstance):
                     'msg_id': telemsg.msg_id,
                     'username': telemsg.username,
                 }
+
+                if edited:
+                    opt['edited'] = True
 
                 if reply_to:
                     opt['reply_to'] = reply_to
