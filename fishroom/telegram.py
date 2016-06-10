@@ -19,10 +19,14 @@ from .models import (
 from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
 from .config import config
 
+TeleUser = namedtuple(
+    'TeleUser', ('id', 'username', 'name'),
+)
+
 TeleMessage = namedtuple(
     'TeleMessage',
-    ('msg_id', 'user_id', 'username', 'chat_id',
-     'content', 'mtype', 'ts', 'media_url',
+    ('msg_id', 'user', 'fwd_from',
+     'chat_id', 'content', 'mtype', 'ts', 'media_url',
      'reply_to', 'reply_text')
 )
 
@@ -59,7 +63,7 @@ class RedisNickStore(BaseNickStore):
     def __init__(self, redis_client):
         self.r = redis_client
 
-    def get_nickname(self, user_id, username=None):
+    def get_nickname(self, user_id, username=None, display_name=None):
         nick = self.r.hget(self.NICKNAME_KEY, user_id)
         if (not nick) and username:
             self.set_nickname(user_id, username)
@@ -67,7 +71,7 @@ class RedisNickStore(BaseNickStore):
         if nick and username:
             self.set_username(nick, username)
         nick = nick.decode('utf-8') if isinstance(nick, bytes) else nick
-        return nick or "tg-{}".format(user_id)
+        return nick or display_name or "tg-{}".format(user_id)
 
     def set_nickname(self, user_id, nickname):
         self.r.hset(self.NICKNAME_KEY, user_id, nickname)
@@ -89,14 +93,14 @@ class MemNickStore(BaseNickStore):
         self.usernicks = {}
         self.nickusers = {}
 
-    def get_nickname(self, user_id, username=None):
+    def get_nickname(self, user_id, username=None, display_name=None):
         nick = self.usernicks.get(user_id)
         if (not nick) and username:
             self.set_nickname(user_id, username)
             nick = username
         if nick and username:
             self.set_username(nick, username)
-        return nick or "tg-{}".format(user_id)
+        return nick or display_name or "tg-{}".format(user_id)
 
     def set_nickname(self, user_id, nickname):
         self.usernicks[user_id] = nickname
@@ -317,9 +321,19 @@ class Telegram(BaseBotInstance):
         return url, None
 
     def parse_jmsg(self, jmsg):
+        def get_display_name(user):
+            names = filter(
+                lambda x: x is not None,
+                [user.get("first_name"), user.get("last_name")]
+            )
+            return " ".join(names)
+
         msg_id = jmsg["message_id"]
+
         from_info = jmsg["from"]
         user_id, username = from_info["id"], from_info.get("username", "")
+        display_name = get_display_name(from_info)
+
         chat_id = jmsg["chat"]["id"]
         ts = jmsg["date"]
         media_url = ""
@@ -422,10 +436,11 @@ class Telegram(BaseBotInstance):
         else:
             content = "(unsupported message type)"
 
+        fwd_from = None
         if "forward_from" in jmsg:
             ffrom = jmsg["forward_from"]
-            content = content + " <forwarded from {} {}>".format(
-                ffrom.get("first_name", ""), ffrom.get("last_name", ""))
+            fwd_from = TeleUser(
+                ffrom['id'], ffrom.get("username"), get_display_name(ffrom))
 
         reply_to, reply_text = None, None
         if "reply_to_message" in jmsg:
@@ -433,16 +448,24 @@ class Telegram(BaseBotInstance):
             reply_user = reply.get("from", None)
             if reply_user:
                 if reply_user["id"] == self.uid:
+                    # msg replied to fishroom bot, reply info should be
+                    # obtained from the text
                     if 'text' in reply:
                         reply_to, reply_text = \
                             self.match_nickname_content(reply['text'])
                         print(reply['text'], reply_to)
                 else:
-                    reply_to = reply_user["id"]
+                    # normal telegram reply
+                    reply_to = TeleUser(
+                        reply_user["id"], reply_user.get("username"),
+                        get_display_name(reply_user)
+                    )
                     reply_text = reply.get('text', '')
 
+        user = TeleUser(user_id, username, display_name)
+
         return TeleMessage(
-            msg_id=msg_id, user_id=user_id, username=username, chat_id=chat_id,
+            msg_id=msg_id, user=user, fwd_from=fwd_from, chat_id=chat_id,
             content=content, mtype=mtype, ts=ts, media_url=media_url,
             reply_to=reply_to, reply_text=reply_text
         )
@@ -497,24 +520,35 @@ class Telegram(BaseBotInstance):
                     continue
 
                 telemsg = self.parse_jmsg(jmsg)
-                if telemsg is None or telemsg.user_id in id_blacklist:
+                user = telemsg.user
+
+                if telemsg is None or user.id in id_blacklist:
                     continue
                 if telemsg.mtype == MessageType.Command:
                     if self.try_set_nick(telemsg) is not None:
                         continue
 
                 nickname = self.nick_store.get_nickname(
-                    telemsg.user_id, telemsg.username)
+                    user.id, user.username, user.name
+                )
 
                 reply_to = ""
                 if telemsg.reply_to:
                     if isinstance(telemsg.reply_to, str):
                         reply_to = telemsg.reply_to
-                    elif isinstance(telemsg.reply_to, int):
+                    elif isinstance(telemsg.reply_to, TeleUser):
+                        u = telemsg.reply_to
                         reply_to = self.nick_store.get_nickname(
-                            telemsg.reply_to, "")
+                            u.id, u.username, u.name)
+
 
                 content = telemsg.content
+
+                if telemsg.fwd_from:
+                    u = telemsg.fwd_from
+                    content = content + "  <fwd {}>".format(
+                        self.nick_store.get_nickname(u.id, u.username, u.name)
+                    )
 
                 receiver = "%d" % telemsg.chat_id
 
@@ -523,7 +557,7 @@ class Telegram(BaseBotInstance):
 
                 opt = {
                     'msg_id': telemsg.msg_id,
-                    'username': telemsg.username,
+                    'username': user.username,
                 }
 
                 if edited:
@@ -542,7 +576,7 @@ class Telegram(BaseBotInstance):
 
     def try_set_nick(self, msg):
         # handle command
-        user_id = msg.user_id
+        user_id = msg.user.id
         target = "%d" % msg.chat_id
         try:
             tmp = msg.content.split()
