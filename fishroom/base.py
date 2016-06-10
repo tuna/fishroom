@@ -41,4 +41,8 @@ class BaseBotInstance(object):
         return (m.group('nick'), m.group('content')) if m else (None, None)
 
 
+class EmptyBot(BaseBotInstance):
+    ChanTag = "__NULL__"
+
+
 # vim: ts=4 sw=4 sts=4 expandtab

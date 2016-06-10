@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sleekxmpp
-from .base import BaseBotInstance
+from .base import BaseBotInstance, EmptyBot
 from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time
 
@@ -71,6 +71,8 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
 
 
 def XMPPThread(xmpp_handle, bus):
+    if xmpp_handle is None or isinstance(xmpp_handle, EmptyBot):
+        return
     def send_to_bus(self, msg):
         bus.publish(msg)
     xmpp_handle.send_to_bus = send_to_bus

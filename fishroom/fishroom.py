@@ -5,6 +5,7 @@ import signal
 import threading
 import time
 
+from .base import EmptyBot
 from .bus import MessageBus
 from .models import MessageType, Message, ChannelType
 from .chatlogger import ChatLogger
@@ -70,6 +71,8 @@ def get_qiniu():
 
 
 def init_telegram():
+    if "telegram" not in config:
+        return EmptyBot()
 
     def photo_store_init():
         provider = config['photo_store']['provider']
@@ -102,6 +105,9 @@ def init_telegram():
 
 
 def init_irc():
+    if "irc" not in config:
+        return EmptyBot()
+
     irc_channels = [b["irc"] for _, b in config['bindings'].items() if "irc" in b]
     server = config['irc']['server']
     port = config['irc']['port']
@@ -112,6 +118,9 @@ def init_irc():
 
 
 def init_xmpp():
+    if "xmpp" not in config:
+        return EmptyBot()
+
     rooms = [b["xmpp"] for _, b in config['bindings'].items() if "xmpp" in b]
     server = config['xmpp']['server']
     port = config['xmpp']['port']
@@ -122,6 +131,9 @@ def init_xmpp():
 
 
 def init_gitter():
+    if "gitter" not in config:
+        return EmptyBot()
+
     rooms = [b["gitter"] for _, b in config['bindings'].items() if 'gitter' in b]
     token = config['gitter']['token']
     me = config['gitter']['me']
@@ -277,7 +289,6 @@ def main():
             try:
                 f(*args, **kwargs)
             except:
-                send_all("Bug Trapped! Save Me! 😱  ")
                 print("[Traceback]")
                 import traceback
                 exc = traceback.format_exc()

@@ -21,24 +21,27 @@ config = {
         ],
     },
 
-    'telegram': {
-        'token': '',  # get this from @BotFather
-        'me': None,
-        'admin': [],  # admin id (integer)
-    },
+    # Uncomment these if you want telegram access
+    # 'telegram': {
+    #     'token': '',  # get this from @BotFather
+    #     'me': None,
+    #     'admin': [],  # admin id (integer)
+    # },
 
-    'xmpp': {
-        'server': 'xmpp.jp',
-        'port': 5222,
-        'jid': 'user@xmpp.jp/resource',
-        'password': '',
-        'nick': 'XiaoT',
-    },
+    # Uncomment these if you want XMPP-MUC access
+    # 'xmpp': {
+    #     'server': 'xmpp.jp',
+    #     'port': 5222,
+    #     'jid': 'user@xmpp.jp/resource',
+    #     'password': '',
+    #     'nick': 'XiaoT',
+    # },
 
-    'gitter': {
-        'token': '',
-        'me': '',  # bot username
-    },
+    # Uncomment these if you want gitter access
+    # 'gitter': {
+    #     'token': '',
+    #     'me': '',  # bot username
+    # },
 
     # Optional, only if you use qiniu for file_store
     # Comment this out if you don't use qiniu
@@ -81,7 +84,7 @@ config = {
     'bindings': {
         "archlinux-cn": {
             "irc": '#archlinux-cn',
-            "telegram": "-1001031857103",
+            "telegram": "-1001031857103",  # group id can be obtained using bot api
             "xmpp": 'chat@conference.xmpp.jp'
         }
     }

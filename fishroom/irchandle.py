@@ -4,7 +4,7 @@ import time
 import irc
 import irc.client
 import random
-from .base import BaseBotInstance
+from .base import BaseBotInstance, EmptyBot
 from .models import (
     Message, ChannelType, MessageType, RichText, TextStyle, Color
 )
@@ -187,6 +187,8 @@ class IRCHandle(BaseBotInstance):
 
 
 def IRCThread(irc_handle, bus):
+    if irc_handle is None or isinstance(irc_handle, EmptyBot):
+        return
     def send_to_bus(self, msg):
         bus.publish(msg)
     irc_handle.send_to_bus = send_to_bus

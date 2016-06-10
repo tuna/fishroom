@@ -10,7 +10,7 @@ import magic
 import html
 import unittest
 from collections import namedtuple
-from .base import BaseBotInstance
+from .base import BaseBotInstance, EmptyBot
 from .photostore import BasePhotoStore
 from .filestore import BaseFileStore
 from .models import (
@@ -634,6 +634,8 @@ class Telegram(BaseBotInstance):
 
 
 def TelegramThread(tg, bus, ):
+    if tg is None or isinstance(tg, EmptyBot):
+        return
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
         bus.publish(msg)

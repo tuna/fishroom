@@ -5,7 +5,7 @@ import asyncio
 import aiohttp
 import requests
 import requests.exceptions
-from .base import BaseBotInstance
+from .base import BaseBotInstance, EmptyBot
 from .models import MessageType, Message, ChannelType
 from .helpers import string_date_time
 
@@ -145,6 +145,8 @@ class Gitter(BaseBotInstance):
 
 
 def GitterThread(gt, bus, ):
+    if gt is None or isinstance(gt, EmptyBot):
+        return
     def send_to_bus(msg):
         bus.publish(msg)
     gt.send_to_bus = send_to_bus
