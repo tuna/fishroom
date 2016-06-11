@@ -156,6 +156,8 @@ class IRCHandle(BaseBotInstance):
         except irc.client.ServerNotConnectedError:
             print("[irc] Server not connected")
             self.irc_conn.reconnect()
+        except irc.client.InvalidCharacters:
+            print("[irc] Invalid character in msg: %s", repr(msg))
         time.sleep(0.5)
 
     def formatRichText(self, rich_text: RichText):
