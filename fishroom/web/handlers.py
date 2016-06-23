@@ -242,8 +242,14 @@ class APIRequestHandler(tornado.web.RequestHandler):
         self.write(json.dumps(kwargs))
 
     def auth(self):
-        token_id = self.get_argument("id")
-        token_key = self.get_argument("key")
+        token_id = self.request.headers.get(
+            "X-TOKEN-ID",
+            self.get_argument("id", "")
+        )
+        token_key = self.request.headers.get(
+            "X-TOKEN-KEY",
+            self.get_argument("key", "")
+        )
         fine = self.mgr.auth(token_id, token_key)
         if not fine:
             self.set_status(403)
