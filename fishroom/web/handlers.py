@@ -327,5 +327,5 @@ class APIPostMessageHandler(APIRequestHandler):
         )
 
         pr.publish(MessageBus.CHANNEL, msg.dumps())
-        self.write("OK")
+        self.write_json(message="OK")
         self.finish()
