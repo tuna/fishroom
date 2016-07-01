@@ -35,7 +35,7 @@ class BaseBotInstance(object):
 
     def match_nickname_content(self, content):
         m = re.match(
-            r'^\[(?P<nick>.+)\] (?P<content>.*)',
+            r'^\[(?P<nick>.+?)\] (?P<content>.*)',
             content, flags=re.UNICODE
         )
         return (m.group('nick'), m.group('content')) if m else (None, None)
