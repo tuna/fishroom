@@ -365,6 +365,8 @@ class Telegram(BaseBotInstance):
                 content = err
             else:
                 content = url + " (sticker)"
+                if 'emoji' in jmsg:
+                    content += " " + jmsg['emoji']
                 media_url = url
                 mtype = MessageType.Sticker
 
