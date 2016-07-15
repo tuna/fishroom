@@ -69,7 +69,7 @@ class TextFormatter(object):
                         cur_style.clear(TextStyle.COLOR)
 
                 elif c == IRCCtrl.SWAPCOLOR:
-                    if cur_style.has_color:
+                    if cur_style.has_color():
                         cur_style.color.swap()
 
                 elif c == IRCCtrl.RESET:
