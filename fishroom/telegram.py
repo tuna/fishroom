@@ -8,6 +8,7 @@ import requests.exceptions
 import mimetypes
 import magic
 import html
+import time
 import unittest
 from collections import namedtuple
 from .base import BaseBotInstance, EmptyBot
@@ -519,6 +520,10 @@ class Telegram(BaseBotInstance):
                     jmsg = update["edited_message"]
                     edited = True
                 else:
+                    continue
+
+                # bypass outdated messages
+                if time.time() - jmsg['date'] > 100:
                     continue
 
                 telemsg = self.parse_jmsg(jmsg)
