@@ -8,7 +8,7 @@ import requests.exceptions
 import mimetypes
 import magic
 import html
-import time
+import time as pytime
 import unittest
 from collections import namedtuple
 from .base import BaseBotInstance, EmptyBot
@@ -523,7 +523,7 @@ class Telegram(BaseBotInstance):
                     continue
 
                 # bypass outdated messages
-                if time.time() - jmsg['date'] > 100:
+                if pytime.time() - jmsg['date'] > 100:
                     continue
 
                 telemsg = self.parse_jmsg(jmsg)
