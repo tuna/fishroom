@@ -7,7 +7,7 @@ import tornado.gen as gen
 import tornadoredis
 
 import hashlib
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from datetime import datetime, timedelta
 from ..db import get_redis as get_pyredis
 from ..base import BaseBotInstance
@@ -32,10 +32,10 @@ pr = get_pyredis()
 class DefaultHandler(tornado.web.RequestHandler):
 
     def get(self):
-        url = "/log/{room}/today".format(
+        url = "log/{room}/today".format(
             room=config["chatlog"]["default_channel"]
         )
-        self.redirect(url)
+        self.redirect(urljoin(config["baseurl"] + "/", url))
 
 
 class RobotsTxtHandler(tornado.web.RequestHandler):

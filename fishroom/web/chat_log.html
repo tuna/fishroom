@@ -264,7 +264,7 @@ $(document).ready(function() {
 				var data = {nickname: this.nickname, content: this.msg_text};
 				$.ajax({
 					type: "POST",
-					url: "/messages/{{room}}/",
+					url: "{{basepath}}/messages/{{room}}/",
 					data: JSON.stringify(data),
 					dataType: 'json'
 				}).done(function(msg) {
