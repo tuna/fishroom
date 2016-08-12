@@ -18,7 +18,7 @@
 				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{date}} <span class="caret"></span></a>
 				<ul class="dropdown-menu">
 					{% for d in dates %}{% if d != date %}
-					<li><a href="/log/{{room}}/{{d}}">{{d}}</a></li>
+					<li><a href="{{basepath}}/log/{{room}}/{{d}}">{{d}}</a></li>
 					{% end %}{% end %}
 				</ul>
 			</li>
@@ -27,7 +27,7 @@
 				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{room}} <span class="caret"></span></a>
 				<ul class="dropdown-menu">
 					{% for r in rooms %}{% if r != room %}
-					<li><a href="/log/{{r}}/today">{{r}}</a></li>
+					<li><a href="{{basepath}}/log/{{r}}/today">{{r}}</a></li>
 					{% end %}{% end %}
 				</ul>
 			</li>
