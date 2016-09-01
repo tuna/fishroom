@@ -101,7 +101,7 @@ class IRCHandle(BaseBotInstance):
         irc_nick = event.source[:event.source.index('!')]
         if irc_nick in self.blacklist:
             return
-        content = random.choice(('🐸', '❤️', '💊', '🈲')) + \
+        content = random.choice(('🐠', '🐟', '🐡', '🐬', '🐳', '🐋', '🦈', '🐙')) + \
             " {} {}".format(irc_nick, event.arguments[0])
         date, time = get_now_date_time()
         mtype = MessageType.Event
