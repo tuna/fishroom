@@ -3,6 +3,7 @@ import json
 import base64
 from .api_client import APIClientManager
 from .telegram import RedisNickStore, RedisStickerURLStore
+from .counter import Counter
 
 
 def dump_meta(r, tofilename):
@@ -29,6 +30,10 @@ def dump_meta(r, tofilename):
         for k, v in r.hgetall(APIClientManager.clients_key).items()
     }
 
+    counters = [Counter(r, name) for name in ('qiniu', )]
+    for c in counters:
+        backup[c.key] = c.incr()
+
     with open(tofilename, 'w') as f:
         json.dump(backup, f, indent=4)
 
@@ -41,7 +46,9 @@ def load_meta(r, fromfile):
         if rk == APIClientManager.clients_key:
             for token_id, b64token in b.items():
                 r.hset(rk, token_id, base64.b64decode(b64token))
-        else:
+        elif isinstance(b, int):
+            r.set(rk, b)
+        elif isinstance(b, dict):
             for k, v in b.items():
                 r.hset(rk, k, v)
 
