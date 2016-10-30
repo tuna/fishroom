@@ -49,20 +49,36 @@ def hualao(cmd, *args, **kwargs):
     today_seconds = (
         today - datetime(today.year, today.month, today.day, 0, 0, 0, 0, tz)
     ).total_seconds()
+
     seconds = 86400 * (days - 1) + today_seconds
+    minutes = 1440 * (days - 1) + (today_seconds / 60)
+    hours = 24 * (days - 1) + (today_seconds / 3600)
 
     mean_person = mean(c.values())
     std_person = stdev(c.values())
 
     total = sum(c.values())
-    avg_second = total / seconds
+
+    if total > seconds:
+        time_average = total / seconds
+        time_unit = "second"
+    elif total > minutes:
+        time_average = total / minutes
+        time_unit = "minute"
+    elif total > hours:
+        time_average = total / hours
+        time_unit = "hour"
+    else:
+        time_average = total / days
+        time_unit = "day"
 
     msg = "Total {} in the past {}\n".format(
         plural(total, "message"), plural(days, "day"))
-    msg += "Mean {:.2f} +/− {:.2f} per person , {:.2f} per second".format(
+    msg += "Mean {:.2f} +/− {:.2f} per person , {:.2f} per {}".format(
         mean_person,
         std_person,
-        avg_second
+        time_average.
+        time_unit
     )
 
     return msg
