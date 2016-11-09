@@ -208,7 +208,12 @@ class MessageStreamHandler(tornado.websocket.WebSocketHandler):
         try:
             msg = json.loads(jmsg)
             self.r = get_redis()
-            self._listen(msg["room"])
+            room = msg["room"]
+            if room not in config["bindings"] or \
+                    room in config.get("private_rooms", []):
+                self.close()
+                return
+            self._listen(room)
         except:
             self.close()
 
@@ -272,6 +277,11 @@ class APILongPollingHandler(APIRequestHandler):
             return
 
         room = self.get_argument("room", None)
+        if room not in config["bindings"] or \
+                room in config.get("private_rooms", []):
+            self.set_status(404)
+            self.finish("Room not found")
+            return
 
         queue = APIClientManager.queue_key.format(token_id=token_id)
         l = yield gen.Task(r.llen, queue)
@@ -308,6 +318,12 @@ class APIPostMessageHandler(APIRequestHandler):
         self.finish()
 
     def post(self, room):
+        if room not in config["bindings"] or \
+                room in config.get("private_rooms", []):
+            self.set_status(404)
+            self.finish("Room not found")
+            return
+
         token_id = self.auth()
         if token_id is None:
             self.finish("Invalid Token")
