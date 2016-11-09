@@ -150,6 +150,11 @@ class PostMessageHandler(tornado.web.RequestHandler):
         self.write(json.dumps(kwargs))
 
     def post(self, room):
+        if room not in config["bindings"] or \
+                room in config.get("private_rooms", []):
+            self.set_status(404)
+            self.finish("Room not found")
+            return
         try:
             self.json_data = json.loads(self.request.body.decode('utf-8'))
         except ValueError:
