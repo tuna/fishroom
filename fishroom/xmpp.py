@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import sleekxmpp
+from .bus import MessageBus, MsgDirection
 from .base import BaseBotInstance, EmptyBot
 from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time
+from .config import config
 
 
 class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
@@ -70,19 +72,57 @@ class XMPPHandle(sleekxmpp.ClientXMPP, BaseBotInstance):
         raise Exception("Not implemented")
 
 
-def XMPPThread(xmpp_handle, bus):
+def XMPP2FishroomThread(xmpp_handle: XMPPHandle, bus: MessageBus):
     if xmpp_handle is None or isinstance(xmpp_handle, EmptyBot):
         return
+
     def send_to_bus(self, msg):
         bus.publish(msg)
+
     xmpp_handle.send_to_bus = send_to_bus
     xmpp_handle.connect(xmpp_handle.srvaddress, reattempt=True)
     xmpp_handle.process(block=True)
 
 
-if __name__ == "__main__":
-    from .config import config
+def Fishroom2XMPPThread(xmpp_handle: XMPPHandle, bus: MessageBus):
+    if xmpp_handle is None or isinstance(xmpp_handle, EmptyBot):
+        return
+    for msg in bus.message_stream():
+        xmpp_handle.forward_msg_from_fishroom(msg)
 
+
+def init():
+    from .db import get_redis
+    redis_client = get_redis()
+    im2fish_bus = MessageBus(redis_client, MsgDirection.im2fish)
+    fish2im_bus = MessageBus(redis_client, MsgDirection.fish2im)
+
+    rooms = [b["xmpp"] for _, b in config['bindings'].items() if "xmpp" in b]
+    server = config['xmpp']['server']
+    port = config['xmpp']['port']
+    nickname = config['xmpp']['nick']
+    jid = config['xmpp']['jid']
+    password = config['xmpp']['password']
+
+    return (
+        XMPPHandle(server, port, jid, password, rooms, nickname),
+        im2fish_bus, fish2im_bus,
+    )
+
+
+def main():
+    if "xmpp" not in config:
+        return
+
+    from .runner import run_threads
+    bot, im2fish_bus, fish2im_bus = init()
+    run_threads([
+        (XMPP2FishroomThread, (bot, im2fish_bus, ), ),
+        (Fishroom2XMPPThread, (bot, fish2im_bus, ), ),
+    ])
+
+
+def test():
     rooms = [b["xmpp"] for _, b in config['bindings'].items()]
     server = config['xmpp']['server']
     port = config['xmpp']['port']
@@ -96,5 +136,17 @@ if __name__ == "__main__":
         print(msg.dumps())
     xmpp_handle.send_to_bus = send_to_bus
     xmpp_handle.process(block=True)
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", default=False, action="store_true")
+    args = parser.parse_args()
+
+    if args.test:
+        test()
+    else:
+        main()
 
 # vim: ts=4 sw=4 sts=4 expandtab

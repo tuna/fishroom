@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import unittest
 from marshmallow import Schema, fields, validate, ValidationError
 
@@ -344,6 +345,8 @@ class MessageSchema(Schema):
     room = fields.String()
     # channel specific options (passed to send_msg method)
     opt = fields.Dict()
+    # available on fishroom to IM direction, specify message route
+    route = fields.Dict()
 
 
 class Message(object):
@@ -360,6 +363,7 @@ class Message(object):
         date, time: message date and time
         room: which room to deliver
         botmsg: msg is from fishroom bot
+        route: message route info
         opt: channel specific options
     """
 
@@ -367,7 +371,7 @@ class Message(object):
 
     def __init__(self, channel, sender, receiver, content,
                  mtype=MessageType.Text, date=None, time=None,
-                 media_url=None, botmsg=False, room=None, opt=None,
+                 media_url=None, botmsg=False, room=None, opt=None, route=None,
                  rich_text=None):
         self.channel = channel
         self.sender = sender
@@ -379,6 +383,7 @@ class Message(object):
         self.time = time
         self.media_url = media_url
         self.botmsg = botmsg
+        self.route = route
         self.room = room
         self.opt = opt or {}
 
@@ -403,6 +408,13 @@ class Message(object):
             return m
         except:
             return Message("fishroom", "fishroom", "None", "Error")
+
+    @property
+    def lines(self):
+        return [
+            line for line in self.content.splitlines()
+            if not re.match(r'^\s*$', line)
+        ]
 
 
 class TestRichText(unittest.TestCase):

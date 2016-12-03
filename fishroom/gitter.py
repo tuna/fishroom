@@ -5,9 +5,12 @@ import asyncio
 import aiohttp
 import requests
 import requests.exceptions
+
+from .bus import MessageBus, MsgDirection
 from .base import BaseBotInstance, EmptyBot
 from .models import MessageType, Message, ChannelType
 from .helpers import string_date_time
+from .config import config
 
 
 class Gitter(BaseBotInstance):
@@ -144,17 +147,50 @@ class Gitter(BaseBotInstance):
                     raise d.exception()
 
 
-def GitterThread(gt, bus, ):
+def Gitter2FishroomThread(gt: Gitter, bus: MessageBus):
     if gt is None or isinstance(gt, EmptyBot):
         return
+
     def send_to_bus(msg):
         bus.publish(msg)
+
     gt.send_to_bus = send_to_bus
     gt.listen_message_stream()
 
 
-if __name__ == "__main__":
+def Fishroom2GitterThread(gt: Gitter, bus: MessageBus):
+    if gt is None or isinstance(gt, EmptyBot):
+        return
+    for msg in bus.message_stream():
+        gt.forward_msg_from_fishroom(msg)
 
+
+def init():
+    from .db import get_redis
+    redis_client = get_redis()
+    im2fish_bus = MessageBus(redis_client, MsgDirection.im2fish)
+    fish2im_bus = MessageBus(redis_client, MsgDirection.fish2im)
+
+    rooms = [b["gitter"] for _, b in config['bindings'].items() if 'gitter' in b]
+    token = config['gitter']['token']
+    me = config['gitter']['me']
+
+    return (Gitter(token, rooms, me), im2fish_bus, fish2im_bus)
+
+
+def main():
+    if "gitter" not in config:
+        return
+
+    from .runner import run_threads
+    bot, im2fish_bus, fish2im_bus = init()
+    run_threads([
+        (Gitter2FishroomThread, (bot, im2fish_bus, ), ),
+        (Fishroom2GitterThread, (bot, fish2im_bus, ), ),
+    ])
+
+
+def test():
     gitter = Gitter(
         token="",
         rooms=(
@@ -178,6 +214,15 @@ if __name__ == "__main__":
         traceback.print_exc()
 
 
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", default=False, action="store_true")
+    args = parser.parse_args()
 
+    if args.test:
+        test()
+    else:
+        main()
 
 # vim: ts=4 sw=4 sts=4 expandtab

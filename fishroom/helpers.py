@@ -2,6 +2,8 @@
 import pytz
 import requests
 import hashlib
+import logging
+
 from datetime import datetime
 from dateutil import parser
 from io import BytesIO
@@ -9,6 +11,13 @@ from PIL import Image
 from .config import config
 
 tz = pytz.timezone(config.get("timezone", "utc"))
+
+
+def get_logger(name, level=logging.DEBUG) -> logging.Logger:
+    logging.basicConfig(format='[%(name)s] [%(levelname)s] %(message)s')
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    return logger
 
 
 def get_now():

@@ -11,7 +11,7 @@ from urllib.parse import urlparse, urljoin
 from datetime import datetime, timedelta
 from ..db import get_redis as get_pyredis
 from ..base import BaseBotInstance
-from ..bus import MessageBus
+from ..bus import MessageBus, MsgDirection
 from ..helpers import get_now, tz
 from ..models import Message, ChannelType, MessageType
 from ..chatlogger import ChatLogger
@@ -27,6 +27,8 @@ def get_redis():
 
 r = get_redis()
 pr = get_pyredis()
+
+mgb_im2fish = MessageBus(pr, MsgDirection.im2fish)
 
 
 class DefaultHandler(tornado.web.RequestHandler):
@@ -190,7 +192,7 @@ class PostMessageHandler(tornado.web.RequestHandler):
             mtype=mtype, date=date, time=time, room=room
         )
 
-        pr.publish(MessageBus.CHANNEL, msg.dumps())
+        mgb_im2fish.publish(msg)
         self.write_json(200, msg="OK")
         self.finish()
 
@@ -347,6 +349,6 @@ class APIPostMessageHandler(APIRequestHandler):
             mtype=mtype, date=date, time=time, room=room
         )
 
-        pr.publish(MessageBus.CHANNEL, msg.dumps())
+        mgb_im2fish(msg)
         self.write_json(message="OK")
         self.finish()

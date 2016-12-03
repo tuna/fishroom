@@ -2,6 +2,7 @@
 from .photostore import BasePhotoStore
 from io import BytesIO
 import imghdr
+import functools
 
 
 class BaseFileStore(object):
@@ -50,6 +51,19 @@ class QiniuStore(BaseFileStore, BasePhotoStore):
         if ret is None:
             return
         return self.base_url + name
+
+
+def get_qiniu(redis_client, config):
+    from .counter import Counter
+    if 'qiniu' not in config:
+        return None
+
+    c = config['qiniu']
+    counter = Counter(redis_client, 'qiniu')
+    return QiniuStore(
+        c['access_key'], c['secret_key'], c['bucket'],
+        counter, c['base_url'],
+    )
 
 
 # vim: ts=4 sw=4 sts=4 expandtab

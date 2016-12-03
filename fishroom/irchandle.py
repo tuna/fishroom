@@ -5,6 +5,7 @@ import irc
 import irc.client
 import random
 from .base import BaseBotInstance, EmptyBot
+from .bus import MessageBus, MsgDirection
 from .models import (
     Message, ChannelType, MessageType, RichText, TextStyle, Color
 )
@@ -188,16 +189,56 @@ class IRCHandle(BaseBotInstance):
         raise Exception("Not implemented")
 
 
-def IRCThread(irc_handle, bus):
+def IRC2FishroomThread(irc_handle: IRCHandle, bus: MessageBus):
     if irc_handle is None or isinstance(irc_handle, EmptyBot):
         return
+
     def send_to_bus(self, msg):
         bus.publish(msg)
+
     irc_handle.send_to_bus = send_to_bus
     irc_handle.reactor.process_forever(60)
 
 
-if __name__ == '__main__':
+def Fishroom2IRCThread(irc_handle: IRCHandle, bus: MessageBus):
+    if irc_handle is None or isinstance(irc_handle, EmptyBot):
+        return
+    for msg in bus.message_stream():
+        irc_handle.forward_msg_from_fishroom(msg)
+
+
+def init():
+    from .db import get_redis
+    redis_client = get_redis()
+    im2fish_bus = MessageBus(redis_client, MsgDirection.im2fish)
+    fish2im_bus = MessageBus(redis_client, MsgDirection.fish2im)
+
+    irc_channels = [b["irc"] for _, b in config['bindings'].items() if "irc" in b]
+    server = config['irc']['server']
+    port = config['irc']['port']
+    nickname = config['irc']['nick']
+    usessl = config['irc']['ssl']
+    blacklist = config['irc']['blacklist']
+
+    return (
+        IRCHandle(server, port, usessl, nickname, irc_channels, blacklist),
+        im2fish_bus, fish2im_bus,
+    )
+
+
+def main():
+    if "irc" not in config:
+        return
+
+    from .runner import run_threads
+    bot, im2fish_bus, fish2im_bus = init()
+    run_threads([
+        (IRC2FishroomThread, (bot, im2fish_bus, ), ),
+        (Fishroom2IRCThread, (bot, fish2im_bus, ), ),
+    ])
+
+
+def test():
     irc_channels = [b["irc"] for _, b in config['bindings'].items()]
     server = config['irc']['server']
     port = config['irc']['port']
@@ -210,5 +251,18 @@ if __name__ == '__main__':
         print(msg.dumps())
     irc_handle.send_to_bus = send_to_bus
     irc_handle.reactor.process_forever(60)
+
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", default=False, action="store_true")
+    args = parser.parse_args()
+
+    if args.test:
+        test()
+    else:
+        main()
 
 # vim: ts=4 sw=4 sts=4 expandtab

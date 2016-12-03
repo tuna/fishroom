@@ -10,6 +10,8 @@ import magic
 import html
 import time as pytime
 import unittest
+import traceback
+
 from collections import namedtuple
 from .base import BaseBotInstance, EmptyBot
 from .photostore import BasePhotoStore
@@ -17,8 +19,13 @@ from .filestore import BaseFileStore
 from .models import (
     Message, ChannelType, MessageType, RichText, TextStyle, Color
 )
-from .helpers import timestamp_date_time, get_now_date_time, webp2png, md5
+from .bus import MessageBus, MsgDirection
+from .helpers import (
+    timestamp_date_time, get_now_date_time, webp2png, md5, get_logger,
+)
 from .config import config
+
+logger = get_logger("Telegram")
 
 TeleUser = namedtuple(
     'TeleUser', ('id', 'username', 'name'),
@@ -166,9 +173,10 @@ class Telegram(BaseBotInstance):
         self.api_base = self._api_base_tmpl.format(token=token)
         self.file_base = self._file_base_tmpl.format(token=token)
 
-        if not isinstance(nick_store, BaseNickStore):
-            raise Exception("Invalid Nickname storage")
-        self.nick_store = nick_store
+        self.nick_store = nick_store \
+            if isinstance(nick_store, BaseNickStore) \
+            else MemNickStore()
+
         self.photo_store = photo_store \
             if isinstance(photo_store, BasePhotoStore) \
             else None
@@ -192,19 +200,18 @@ class Telegram(BaseBotInstance):
             r = requests.post(api, **kwargs)
             return r
         except requests.exceptions.Timeout:
-            print("Error: Timeout requesting Telegram")
+            logger.error("Timeout requesting Telegram")
         except KeyboardInterrupt:
             raise
         except:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Unknown error")
         return None
 
     def _flush(self):
         """
         Flush unprocessed messages
         """
-        print("[Telegram] Flushing messages")
+        logger.info("Flushing messages")
 
         api = self.api_base + "/getUpdates"
 
@@ -224,14 +231,14 @@ class Telegram(BaseBotInstance):
             return latest["update_id"] + 1
 
     def download_file(self, file_id):
-        print("[Telegram] downloading file {}".format(file_id))
+        logger.info("downloading file {}".format(file_id))
         api = self.api_base + "/getFile"
         r = self._must_post(api, data={'file_id': file_id})
         if r is None:
             return
         ret = json.loads(r.text)
         if ret["ok"] is False:
-            print("[Telegram] {}".format(ret["description"]))
+            logger.info(ret["description"])
             return
         file_path = ret["result"]["file_path"]
         file_url = self.file_base + file_path
@@ -246,7 +253,7 @@ class Telegram(BaseBotInstance):
         if photo is None:
             return None, "teleboto Faild to download file"
 
-        print("[Telegram] uploading photo {}".format(file_id))
+        logger.info("uploading photo {}".format(file_id))
         url = self.photo_store.upload_image(filedata=photo)
         if url is None:
             return None, "Failed to upload Image"
@@ -263,7 +270,7 @@ class Telegram(BaseBotInstance):
             return None, "Unable to upload photo"
 
         sticker = self.download_file(file_id)
-        print("[Telegram] uploading sticker {}".format(file_id))
+        logger.info("uploading sticker {}".format(file_id))
 
         if sticker is None:
             return None, "teleboto failed to download file"
@@ -292,7 +299,7 @@ class Telegram(BaseBotInstance):
         if filedata is None:
             return None, "teleboto Faild to download file"
 
-        print("[Telegram] uploading document {}".format(doc["file_id"]))
+        logger.info("uploading document {}".format(doc["file_id"]))
 
         url = self.file_store.upload_file(
             filedata, doc.get("file_name", "file"), filetype=filetype)
@@ -336,6 +343,7 @@ class Telegram(BaseBotInstance):
         display_name = get_display_name(from_info)
 
         chat_id = jmsg["chat"]["id"]
+        chat_title = jmsg["chat"].get("title", "unknown")
         ts = jmsg["date"]
         media_url = ""
 
@@ -456,7 +464,7 @@ class Telegram(BaseBotInstance):
                     if 'text' in reply:
                         reply_to, reply_text = \
                             self.match_nickname_content(reply['text'])
-                        print(reply['text'], reply_to)
+                        logger.debug("reply", reply['text'], reply_to)
                 else:
                     # normal telegram reply
                     reply_to = TeleUser(
@@ -466,6 +474,9 @@ class Telegram(BaseBotInstance):
                     reply_text = reply.get('text', '')
 
         user = TeleUser(user_id, username, display_name)
+
+        logger.debug("new msg to {}: {}".format(chat_title, content))
+
 
         return TeleMessage(
             msg_id=msg_id, user=user, fwd_from=fwd_from, chat_id=chat_id,
@@ -488,7 +499,7 @@ class Telegram(BaseBotInstance):
 
         api = self.api_base + "/getUpdates"
         offset = self._flush()
-        print("[Telegram] Ready!")
+        logger.info("Ready!")
 
         while True:
             r = self._must_post(
@@ -504,11 +515,11 @@ class Telegram(BaseBotInstance):
             try:
                 ret = json.loads(r.text)
             except:
-                print("Failed to parse json: %s" % r.text)
+                logger.Error("Failed to parse json: %s" % r.text)
                 continue
 
             if ret["ok"] is False:
-                print("[Telegram Error] {}".format(ret["description"]))
+                logger.Error(ret["description"])
                 continue
 
             for update in ret["result"]:
@@ -600,7 +611,7 @@ class Telegram(BaseBotInstance):
                     return True
                 self.nick_store.set_nickname(user_id, nick)
                 content = "Changed nickname to '%s'" % nick
-                print(target, content)
+                logger.debug(target, content)
                 self.send_msg(target, content)
             else:
                 self.send_msg(
@@ -674,12 +685,70 @@ class Telegram(BaseBotInstance):
         return md
 
 
-def TelegramThread(tg, bus, ):
+def Telegram2FishroomThread(tg: Telegram, bus: MessageBus):
     if tg is None or isinstance(tg, EmptyBot):
         return
     tele_me = [int(x) for x in config["telegram"]["me"]]
     for msg in tg.message_stream(id_blacklist=tele_me):
         bus.publish(msg)
+
+
+def Fishroom2TelegramThread(tg: Telegram, bus: MessageBus):
+    if tg is None or isinstance(tg, EmptyBot):
+        return
+    for msg in bus.message_stream():
+        tg.forward_msg_from_fishroom(msg)
+
+
+def init():
+    from .db import get_redis
+    from .filestore import get_qiniu
+    from .photostore import Imgur, VimCN
+    redis_client = get_redis()
+
+    def photo_store_init():
+        provider = config['photo_store']['provider']
+        if provider == "imgur":
+            options = config['photo_store']['options']
+            return Imgur(**options)
+        elif provider == "vim-cn":
+            return VimCN()
+        elif provider == "qiniu":
+            return get_qiniu(redis_client, config)
+
+    nick_store = RedisNickStore(redis_client)
+    sticker_url_store = RedisStickerURLStore(redis_client)
+    photo_store = photo_store_init()
+    file_store = None
+
+    if "file_store" in config:
+        provider = config["file_store"]["provider"]
+        if provider == "qiniu":
+            file_store = get_qiniu(redis_client, config)
+
+    tg = Telegram(
+            config["telegram"]["token"],
+            sticker_url_store=sticker_url_store,
+            nick_store=nick_store,
+            photo_store=photo_store,
+            file_store=file_store,
+        )
+
+    im2fish_bus = MessageBus(redis_client, MsgDirection.im2fish)
+    fish2im_bus = MessageBus(redis_client, MsgDirection.fish2im)
+    return tg, im2fish_bus, fish2im_bus
+
+
+def main():
+    if "telegram" not in config:
+        return
+
+    from .runner import run_threads
+    tg, im2fish_bus, fish2im_bus = init()
+    run_threads([
+        (Telegram2FishroomThread, (tg, im2fish_bus, ), ),
+        (Fishroom2TelegramThread, (tg, fish2im_bus, ), ),
+    ])
 
 
 class TestRichText(unittest.TestCase):
@@ -713,8 +782,7 @@ class TestRichText(unittest.TestCase):
                 )
 
 
-if __name__ == '__main__':
-
+def test():
     unittest.main()
 
     from .photostore import VimCN
@@ -727,6 +795,19 @@ if __name__ == '__main__':
     for msg in tele.message_stream():
         print(msg.dumps())
         tele.send_msg(msg.receiver, msg.content)
+    return
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", default=False, action="store_true")
+    args = parser.parse_args()
+
+    if args.test:
+        test()
+    else:
+        main()
 
 
 # vim: ts=4 sw=4 sts=4 expandtab
