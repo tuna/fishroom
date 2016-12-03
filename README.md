@@ -24,6 +24,29 @@ big party again.
 - Tox (not yet)
 - Wechat (maybe)
 
+## Basic Architecture
+
+Fishroom consists of a *fishroom core* process, which routes messages among IMs and process commands, 
+and several IM handler processes to deal with different IMs. These components are connected via Redis pub/sub.
+
+```
++----------+
+| IRC      |<-+
++----------+  |
++----------+  |
+| XMPP     |<-+
++----------+  |
++----------+  |    +-------+       +---------------+
+| Telegram |<-+--> | Redis | <---> | Fishroom Core |
++----------+  |    +-------+       +---------------+
++----------+  |
+| Gitter   |<-+
++----------+  |
++----------+  |
+| Web      |<-+
++----------+
+```
+
 ## How to Use
 
 Clone me first
@@ -60,12 +83,21 @@ Since the code of fishroom often changes, we mount the code as a volume, and lin
 
 You can test it using
 ```
+# this is fishroom core
 docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
+
+# these are fishroom IM interfaces, not all of them are needed
+docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.telegram
+docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.IRC
+docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.gitter
+docker run -it --rm --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.xmpp
 ```
+You may need `tmux` or simply multiple terminals to run the aforementioned foreground commands.
 
 If everything works, we run it as daemon.
 ```
 docker run -d --name fishroom --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom
+docker run -d --name fishroom --link redis:redis -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.telegram
 ```
 
 To view the logs, use
@@ -75,7 +107,7 @@ docker logs fishroom
 
 Next we run the web interface, if you have configured the `chat_logger` part in `config.py`.
 ```
-docker run -d --name fishroom-web --link redis:redis -p 127.0.0.1:8000:8000 -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.fishroom_web
+docker run -d --name fishroom-web --link redis:redis -p 127.0.0.1:8000:8000 -v /path/to/fishroom/fishroom:/data/fishroom fishroom:dev python3 -u -m fishroom.web
 ```
 Open your browser, and visit <http://127.0.0.1:8000/>, you should be able to view the web UI of fishoom.
 
@@ -105,8 +137,16 @@ pip3 install -r requirements.txt
 
 Run fishroom and fishroom web.
 ```
+# run fishroom core
 python3 -m fishroom.fishroom
-python3 -m fishroom.fishroom_web
+
+# start IM interfaces, select not all of them are needed
+python3 -m fishroom.telegram
+python3 -m fishroom.IRC
+python3 -m fishroom.gitter
+python3 -m fishroom.xmpp
+
+python3 -m fishroom.web
 ```
 Open your browser, and visit <http://127.0.0.1:8000/>, you should be able to view the web UI of fishoom.
 
