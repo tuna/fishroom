@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import tornado.ioloop
 import tornado.web
-from .web.handlers import (
+from .handlers import (
     DefaultHandler, TextStoreHandler, ChatLogHandler, MessageStreamHandler,
     PostMessageHandler, APILongPollingHandler, APIPostMessageHandler,
     RobotsTxtHandler
 )
-from .config import config
+from ..config import config
 
 
 def main():
