@@ -75,7 +75,7 @@ class BaseBotInstance(object):
 
         text_url = msg.opt.get('text_url', None)
         if text_url is not None:
-            lines = text_url + " (long text)"
+            lines = [text_url + " (long text)", ]
         else:
             lines = msg.lines
 
