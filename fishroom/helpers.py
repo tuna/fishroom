@@ -14,9 +14,11 @@ from .config import config
 tz = pytz.timezone(config.get("timezone", "utc"))
 
 
-def get_logger(name, level=logging.DEBUG) -> logging.Logger:
+def get_logger(name, level=None) -> logging.Logger:
     logging.basicConfig(format='[%(name)s] [%(levelname)s] %(message)s')
     logger = logging.getLogger(name)
+    if level is None:
+        level = logging.DEBUG if config.get("debug", False) else logging.INFO
     logger.setLevel(level)
     return logger
 
