@@ -6,6 +6,10 @@ import hashlib
 import json
 from .helpers import get_now
 from .config import config
+from .helpers import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class BaseTextStore(object):
@@ -30,7 +34,7 @@ class Pastebin(BaseTextStore):
     def __init__(self, api_dev_key):
         self.api_dev_key = api_dev_key
 
-    def new_paste(self, text, sender, **kwargs):
+    def new_paste(self, text, sender, **kwargs) -> str:
 
         ts = kwargs["date"] + kwargs["time"] \
             if "date" in kwargs and "time" in kwargs \
@@ -49,7 +53,7 @@ class Pastebin(BaseTextStore):
         try:
             r = requests.post(self.api_url, data=data, timeout=5)
         except requests.exceptions.Timeout:
-            print("Error: Timeout uploading to Pastebin")
+            logger.error("Timeout uploading to Pastebin")
             return None
 
         if r.text.startswith("http"):
@@ -65,14 +69,14 @@ class Vinergy(BaseTextStore):
     def __init__(self, **kwargs):
         pass
 
-    def new_paste(self, text, sender, **kwargs):
+    def new_paste(self, text, sender, **kwargs) -> str:
         data = {
             'vimcn': text,
         }
         try:
             r = requests.post(self.api_url, data=data, timeout=5)
         except requests.exceptions.Timeout:
-            print("Error: Timeout uploading to Vinergy")
+            logger.error("Timeout uploading to Vinergy")
             return None
 
         if r.text.startswith("http"):

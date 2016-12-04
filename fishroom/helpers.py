@@ -4,6 +4,7 @@ import requests
 import hashlib
 import logging
 
+from typing import Tuple
 from datetime import datetime
 from dateutil import parser
 from io import BytesIO
@@ -55,15 +56,15 @@ def md5(data):
     return m.hexdigest()
 
 
-def download_file(url):
+def download_file(url) -> Tuple[bytes, str]:
+    logger = get_logger(__name__)
     try:
         r = requests.get(url, timeout=10)
     except requests.exceptions.Timeout:
-        print("Error: Timeout downloading %s" % url)
+        logger.error("Timeout downloading {}".format(url))
         return None, None
     except:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Failed to download {}".format(url))
         return None, None
 
     return (r.content, r.headers.get('content-type'))
@@ -71,7 +72,7 @@ def download_file(url):
 
 def plural(number: int, origin: str, plurals: str=None) -> str:
     # need lots of check, or not?
-    if not plurals:
+    if plurals is None:
         plurals = origin + "s"
 
     if number != 1:

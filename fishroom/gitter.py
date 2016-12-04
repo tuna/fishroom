@@ -9,8 +9,10 @@ import requests.exceptions
 from .bus import MessageBus, MsgDirection
 from .base import BaseBotInstance, EmptyBot
 from .models import MessageType, Message, ChannelType
-from .helpers import string_date_time
+from .helpers import string_date_time, get_logger
 from .config import config
+
+logger = get_logger("Gitter")
 
 
 class Gitter(BaseBotInstance):
@@ -46,12 +48,11 @@ class Gitter(BaseBotInstance):
             r = requests.post(api, **kwargs)
             return r
         except requests.exceptions.Timeout:
-            print("Error: Timeout requesting Telegram")
+            logger.error("Timeout requesting Gitter")
         except KeyboardInterrupt:
             raise
         except:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Unknown error requesting Gitter")
         return None
 
     async def fetch(self, session, room, id_blacklist):
@@ -75,7 +76,7 @@ class Gitter(BaseBotInstance):
             except:
                 raise
 
-    def parse_jmsg(self, room, jmsg):
+    def parse_jmsg(self, room, jmsg) -> Message:
         from_user = jmsg['fromUser']['username']
         content = jmsg['text']
         date, time = string_date_time(jmsg['sent'])
@@ -122,7 +123,6 @@ class Gitter(BaseBotInstance):
         }
 
         self._must_post(url, json=j, headers=self.headers)
-
 
     def send_to_bus(self, msg):
         raise NotImplementedError()

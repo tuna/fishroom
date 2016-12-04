@@ -4,6 +4,10 @@ import json
 import requests
 import requests.exceptions
 from base64 import b64encode
+from .helpers import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class BasePhotoStore(object):
@@ -38,11 +42,10 @@ class Imgur(BasePhotoStore):
                 timeout=5,
             )
         except requests.exceptions.Timeout:
-            print("Error: Timeout uploading to Imgur")
+            logger.error("Timeout uploading to Imgur")
             return None
         except:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Unknown errror uploading to Imgur")
             return None
 
         try:
@@ -50,7 +53,9 @@ class Imgur(BasePhotoStore):
         except:
             return None
         if ret.get('status', None) != 200 or ret.get('success', False) != True:
-            print("Error: Imgur returned error, {}".format(ret.get('data', '')))
+            logger.error(
+                "Error: Imgur returned error, {}".format(ret.get('data', ''))
+            )
             return None
 
         link = ret.get('data', {}).get('link', None)
@@ -64,7 +69,7 @@ class VimCN(BasePhotoStore):
     def __init__(self, **kwargs):
         pass
 
-    def upload_image(self, filename=None, filedata=None, **kwargs):
+    def upload_image(self, filename=None, filedata=None, **kwargs) -> str:
         if filedata is None:
             files = {"image": open(filename, 'rb')}
         else:
@@ -73,11 +78,10 @@ class VimCN(BasePhotoStore):
         try:
             r = requests.post(self.url, files=files, timeout=5)
         except requests.exceptions.Timeout:
-            print("Error: Timeout uploading to VimCN")
+            logger.error("Timeout uploading to VimCN")
             return None
         except:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Unknown errror uploading to VimCN")
             return None
         if not r.ok:
             return None

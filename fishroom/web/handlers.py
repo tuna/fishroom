@@ -221,7 +221,6 @@ class MessageStreamHandler(tornado.websocket.WebSocketHandler):
 
     @gen.engine
     def _listen(self, room):
-        print("polling on room: ", room)
         self.redis_chan = ChatLogger.CHANNEL.format(channel=room)
         yield gen.Task(self.r.subscribe, self.redis_chan)
         self.r.listen(self._on_update)

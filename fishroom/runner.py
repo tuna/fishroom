@@ -20,7 +20,8 @@ def run_threads(thread_target_args: Iterable[Tuple[AnyFunc, AnyArgs]]):
     tasks = []
     DEAD = threading.Event()
 
-    def die(f):
+    # wrapper to send report traceback info to telegram
+    def die(f: AnyFunc):
         tg = Telegram(config["telegram"]["token"])
         logger = get_logger(__name__)
 

@@ -10,8 +10,11 @@ from .models import (
     Message, ChannelType, MessageType, RichText, TextStyle, Color
 )
 from .textformat import TextFormatter, IRCCtrl
-from .helpers import get_now_date_time
+from .helpers import get_now_date_time, get_logger
 from .config import config
+
+
+logger = get_logger("IRC")
 
 
 class IRCHandle(BaseBotInstance):
@@ -31,7 +34,7 @@ class IRCHandle(BaseBotInstance):
         self.reactor = irc.client.Reactor()
         self.irc_conn = self.reactor.server()
 
-        print("[IRC] connecting to {}:{}".format(server, port))
+        logger.info("connecting to {}:{}".format(server, port))
         if usessl:
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             self.irc_conn.connect(
@@ -55,13 +58,12 @@ class IRCHandle(BaseBotInstance):
                 self.irc_conn.last_pong = time.time()
             self.irc_conn.ping(self.irc_conn.get_server_name())
         except irc.client.ServerNotConnectedError:
-            print('[irc]  Reconnecting...')
+            logger.info('Reconnecting...')
             self.irc_conn.reconnect()
             self.irc_conn.last_pong = time.time()
 
     def on_pong(self, conn, event):
         conn.last_pong = time.time()
-        # print('[irc]  PONG from: ', event.source)
 
     def on_welcome(self, conn, event):
         for c in self.channels:
@@ -69,11 +71,9 @@ class IRCHandle(BaseBotInstance):
                 conn.join(c)
 
     def on_join(self, conn, event):
-        print('[irc] ', event.source + ' ' + event.target)
+        logger.info(event.source + ' ' + event.target)
 
     def on_privmsg(self, conn, event):
-        # print('[irc] ', event.source + ' ' + event.target + ' ' + event.arguments[0])
-
         irc_nick = event.source[:event.source.index('!')]
         if irc_nick in self.blacklist:
             return
@@ -155,10 +155,10 @@ class IRCHandle(BaseBotInstance):
         try:
             self.irc_conn.privmsg(target, msg)
         except irc.client.ServerNotConnectedError:
-            print("[irc] Server not connected")
+            logger.warning("Server not connected")
             self.irc_conn.reconnect()
         except irc.client.InvalidCharacters:
-            print("[irc] Invalid character in msg: %s", repr(msg))
+            logger.warning("Invalid character in msg: %s", repr(msg))
         time.sleep(0.5)
 
     def formatRichText(self, rich_text: RichText):
@@ -251,7 +251,6 @@ def test():
         print(msg.dumps())
     irc_handle.send_to_bus = send_to_bus
     irc_handle.reactor.process_forever(60)
-
 
 
 if __name__ == '__main__':

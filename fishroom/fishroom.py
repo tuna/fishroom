@@ -13,9 +13,11 @@ from .textstore import Pastebin, Vinergy, RedisStore, ChatLoggerStore
 # from .telegram_tg import TgTelegram, TgTelegramThread
 from .api_client import APIClientManager
 from .command import get_command_handler, parse_command
+from .helpers import get_logger
 
 from .config import config
 from .db import get_redis
+
 
 
 redis_client = get_redis()
@@ -24,6 +26,8 @@ msgs_to_im = MessageBus(redis_client, MsgDirection.fish2im)
 
 chat_logger = ChatLogger(redis_client)
 api_mgr = APIClientManager(redis_client)
+
+logger = get_logger("Fishroom")
 
 
 def load_plugins():
@@ -71,11 +75,10 @@ def main():
         try:
             return handler.func(cmd, *args, msg=msg, room=room)
         except:
-            import traceback
-            traceback.print_exc()
+            logger.exception("failed to execute command: {}".format(cmd))
 
     for msg in msgs_from_im.message_stream():
-        print(msg)
+        logger.info(msg)
         if msg.room is None:
             room, b = get_binding(msg)
             msg.room = room
@@ -120,7 +123,7 @@ def main():
 
             if text_url is None:
                 # Fail
-                print("Failed to publish text")
+                logger.error("Failed to publish text")
                 continue
 
             msg.opt['text_url'] = text_url

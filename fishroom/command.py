@@ -3,6 +3,9 @@
 import shlex
 from collections import namedtuple
 from .config import config
+from .helpers import get_logger
+
+logger = get_logger(__name__)
 
 LEADING_CHARS = ('/', '.')
 
@@ -18,7 +21,7 @@ command_handlers = {}
 def register_command(cmd, func, **options):
     if cmd in command_handlers:
         raise Exception("Command '%s' already registered" % cmd)
-    print("[Fishroom] command `%s` registered" % cmd)
+    logger.info("command `%s` registered" % cmd)
     command_handlers[cmd] = CmdHandler(
         func, options.get("desc", ""), options.get("usage", ""))
 
