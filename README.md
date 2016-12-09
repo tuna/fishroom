@@ -128,7 +128,7 @@ mv fishroom/config.py.example fishroom/config.py
 vim fishroom/config.py
 ```
 
-Ensure your python version is at least 3.4, next, we install the dependencies for fishroom.
+Ensure your python version is at least 3.5, next, we install the dependencies for fishroom.
 
 ```
 apt-get install -y python3-dev python3-pip libmagic1 libjpeg-dev libpng-dev libwebp-dev zlib1g-dev gcc
