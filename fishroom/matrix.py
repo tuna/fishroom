@@ -6,9 +6,11 @@ from requests.exceptions import MissingSchema
 from .bus import MessageBus, MsgDirection
 from .base import BaseBotInstance, EmptyBot
 from .models import Message, ChannelType, MessageType
-from .helpers import get_now_date_time
+from .helpers import get_now_date_time, get_logger
 from .config import config
 import sys
+
+logger = get_logger("Matrix")
 
 class MatrixHandle(BaseBotInstance):
 
@@ -20,28 +22,26 @@ class MatrixHandle(BaseBotInstance):
         try:
             client.login_with_password(username, password)
         except MatrixRequestError as e:
-            print(e)
             if e.code == 403:
-                print("Bad username or password.")
+                logger.error("403 Bad username or password.")
                 sys.exit(4)
             else:
-                print("Check your server details are correct.")
+                logger.error("{} Check your server details are correct.".format(e))
                 sys.exit(2)
         except MissingSchema as e:
-            print("Bad URL format.")
-            print(e)
+            logger.error("{} Bad URL format.".format(e))
             sys.exit(3)
 
         self.username = client.user_id
-        print("logged in as: {}".format(self.username))
+        logger.info("logged in as: {}".format(self.username))
 
         if nick is not None:
             u = client.get_user(client.user_id)
-            print("Setting display name to {}".format(nick))
+            logger.info("Setting display name to {}".format(nick))
             try:
                 u.set_display_name(nick)
             except MatrixRequestError as e:
-                print("Fail to set display name: error = {}".format(e))
+                logger.error("Fail to set display name: error = {}".format(e))
 
         self.joined_rooms = {}
         self.room_id_to_alias = {}
@@ -51,14 +51,13 @@ class MatrixHandle(BaseBotInstance):
             try:
                 room = client.join_room(room_id_alias)
             except MatrixRequestError as e:
-                print(e)
                 if e.code == 400:
-                    print("Room ID/Alias in the wrong format")
+                    logger.error("400 Room ID/Alias in the wrong format")
                     sys.exit(11)
                 else:
-                    print("Couldn't find room {}".format(room_id_alias))
+                    logger.error("{} Couldn't find room {}".format(e, room_id_alias))
                     sys.exit(12)
-            print("Joined room {}".format(room_id_alias))
+            logger.info("Joined room {}".format(room_id_alias))
             self.joined_rooms[room_id_alias] = room
             self.room_id_to_alias[room.room_id] = room_id_alias
             room.add_listener(self.on_message)
@@ -68,10 +67,10 @@ class MatrixHandle(BaseBotInstance):
     def on_message(self, room, event):
         if event['sender'] == self.username:
             return
-        print("event received, type: {}".format(event['type']))
+        logger.info("event received, type: {}".format(event['type']))
         if event['type'] == "m.room.member":
             if event['membership'] == "join":
-                print("{0} joined".format(event['content']['displayname']))
+                logger.info("{0} joined".format(event['content']['displayname']))
         elif event['type'] == "m.room.message":
             sender = event['sender']
             if sender not in self.displaynames.keys():
@@ -80,13 +79,13 @@ class MatrixHandle(BaseBotInstance):
             sender = self.displaynames[sender]
 
             if event['content']['msgtype'] == "m.text":
-                print("{0}: {1}".format(sender, event['content']['body']))
+                room_alias = self.room_id_to_alias[room.room_id]
                 date, time = get_now_date_time()
                 mtype = MessageType.Text
+                logger.info("[{}] {}: {}".format(room_alias, sender, event['content']['body']))
                 msg = Message(
                     ChannelType.Matrix,
-                    sender, self.room_id_to_alias[room.room_id],
-                    event['content']['body'],
+                    sender, room_alias, event['content']['body'],
                     mtype=mtype, date=date, time=time)
                 self.send_to_bus(self, msg)
 
@@ -156,7 +155,7 @@ def test():
     matrix_handle = MatrixHandle(server, user, password, rooms)
 
     def send_to_bus(self, msg):
-        print(msg.dumps())
+        logger.info(msg.dumps())
     matrix_handle.send_to_bus = send_to_bus
     matrix_handle.process(block=True)
 
