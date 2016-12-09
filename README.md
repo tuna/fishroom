@@ -18,6 +18,7 @@ big party again.
 
 - IRC
 - XMPP
+- [Matrix](https://matrix.org)
 - Telegram
 - Gitter
 - Actor (not yet)
