@@ -14,7 +14,7 @@ class MatrixHandle(BaseBotInstance):
 
     ChanTag = ChannelType.Matrix
 
-    def __init__(self, server, username, password, rooms):
+    def __init__(self, server, username, password, rooms, nick=None):
         client = MatrixClient(server)
 
         try:
@@ -35,8 +35,18 @@ class MatrixHandle(BaseBotInstance):
         self.username = client.user_id
         print("logged in as: {}".format(self.username))
 
+        if nick is not None:
+            u = client.get_user(client.user_id)
+            print("Setting display name to {}".format(nick))
+            try:
+                u.set_display_name(nick)
+            except MatrixRequestError as e:
+                print("Fail to set display name: error = {}".format(e))
+
         self.joined_rooms = {}
         self.room_id_to_alias = {}
+        self.displaynames = {}
+
         for room_id_alias in rooms:
             try:
                 room = client.join_room(room_id_alias)
@@ -63,13 +73,19 @@ class MatrixHandle(BaseBotInstance):
             if event['membership'] == "join":
                 print("{0} joined".format(event['content']['displayname']))
         elif event['type'] == "m.room.message":
+            sender = event['sender']
+            if sender not in self.displaynames.keys():
+                u_send = self.client.get_user(sender)
+                self.displaynames[sender] = u_send.get_display_name()
+            sender = self.displaynames[sender]
+
             if event['content']['msgtype'] == "m.text":
-                print("{0}: {1}".format(event['sender'], event['content']['body']))
+                print("{0}: {1}".format(sender, event['content']['body']))
                 date, time = get_now_date_time()
                 mtype = MessageType.Text
                 msg = Message(
                     ChannelType.Matrix,
-                    event['sender'], self.room_id_to_alias[room.room_id],
+                    sender, self.room_id_to_alias[room.room_id],
                     event['content']['body'],
                     mtype=mtype, date=date, time=time)
                 self.send_to_bus(self, msg)
@@ -111,9 +127,10 @@ def init():
     server = config['matrix']['server']
     user = config['matrix']['user']
     password = config['matrix']['password']
+    nick = config['matrix'].get('nick', None)
 
     return (
-        MatrixHandle(server, user, password, rooms),
+        MatrixHandle(server, user, password, rooms, nick),
         im2fish_bus, fish2im_bus,
     )
 

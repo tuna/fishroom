@@ -48,6 +48,7 @@ config = {
     #     'server': 'https://matrixim.cc:8448',
     #     'user': 'fishroom',
     #     'password': '',
+    #     'nick': 'bot_fishroom',
     # },
 
     # Optional, only if you use qiniu for file_store
