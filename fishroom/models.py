@@ -12,6 +12,7 @@ class ChannelType(object):
     IRC = "irc"
     Telegram = "telegram"
     Gitter = "gitter"
+    Matrix = "matrix"
     Web = "web"
     API = "api"
 

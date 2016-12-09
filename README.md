@@ -18,6 +18,7 @@ big party again.
 
 - IRC
 - XMPP
+- [Matrix](https://matrix.org) (depends on [matrix-python-sdk](https://github.com/matrix-org/matrix-python-sdk))
 - Telegram
 - Gitter
 - Actor (not yet)
