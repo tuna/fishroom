@@ -26,7 +26,9 @@ RUN python3 -m ensurepip && \
 RUN pip3 install pillow && \
 	pip3 install -r /data/requirements.txt
 
-RUN apt-get remove -y libjpeg-dev libpng-dev libwebp-dev zlib1g-dev gcc && apt-get clean all
+RUN apt-get remove -y libjpeg-dev libpng-dev libwebp-dev zlib1g-dev gcc && \
+	apt-get autoremove -y && \
+	apt-get clean all
 
 WORKDIR /data
 USER fishroom
