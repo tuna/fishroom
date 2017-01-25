@@ -15,6 +15,7 @@ config = {
         'server': 'irc.freenode.net',
         'port': 6697,
         'nick': 'XiaoT',       # IRC nick name
+        'password': None,      # IRC account password, if nickname registered
         'ssl': True,
         'blacklist': [
             '[Olaf]',
