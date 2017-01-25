@@ -24,7 +24,7 @@ class IRCHandle(BaseBotInstance):
 
     ChanTag = ChannelType.IRC
 
-    def __init__(self, server, port, usessl, nickname, channels, blacklist=[]):
+    def __init__(self, server, port, usessl, nickname, channels, blacklist=[], password=None):
         irc.client.ServerConnection.buffer_class.errors = 'replace'
 
         self.nickname = nickname
@@ -36,11 +36,12 @@ class IRCHandle(BaseBotInstance):
 
         logger.info("connecting to {}:{}".format(server, port))
         if usessl:
+            logger.debug("using ssl to connect...")
             ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
             self.irc_conn.connect(
-                server, port, nickname, connect_factory=ssl_factory)
+                server, port, nickname, password=password, connect_factory=ssl_factory)
         else:
-            self.irc_conn.connect(server, port, nickname)
+            self.irc_conn.connect(server, port, nickname, password=password)
         self.irc_conn.last_pong = time.time()
         self.reactor.execute_every(60, self.keep_alive_ping)
 
@@ -219,15 +220,17 @@ def init():
     nickname = config['irc']['nick']
     usessl = config['irc']['ssl']
     blacklist = config['irc']['blacklist']
+    password = config['irc']['password']
 
     return (
-        IRCHandle(server, port, usessl, nickname, irc_channels, blacklist),
+        IRCHandle(server, port, usessl, nickname, irc_channels, blacklist, password),
         im2fish_bus, fish2im_bus,
     )
 
 
 def main():
     if "irc" not in config:
+        logger.error("IRC config not found in config.py! exiting...")
         return
 
     from .runner import run_threads
