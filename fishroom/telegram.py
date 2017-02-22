@@ -515,11 +515,11 @@ class Telegram(BaseBotInstance):
             try:
                 ret = json.loads(r.text)
             except:
-                logger.Error("Failed to parse json: %s" % r.text)
+                logger.error("Failed to parse json: %s" % r.text)
                 continue
 
             if ret["ok"] is False:
-                logger.Error(ret["description"])
+                logger.error(ret["description"])
                 continue
 
             for update in ret["result"]:
