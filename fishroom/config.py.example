@@ -6,6 +6,7 @@ config = {
     'cmd_me': 'tg_bot',  # username of the telegram bot
 
     'redis': {
+        # "unix_socket_path": "/var/run/redis/redis.sock"
         "host": "redis-host",  # hostname for redis servere
         "port": 6379,
         "prefix": "fishroom",
