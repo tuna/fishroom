@@ -7,8 +7,13 @@ __dbctx = {}
 
 def get_redis():
     if 'redis' not in __dbctx:
-        redis_client = redis.StrictRedis(
-            host=config['redis']['host'], port=config['redis']['port'])
+        if config['redis'].get('unix_socket_path') is not None:
+            redis_client = redis.StrictRedis(
+                unix_socket_path=config['redis']['unix_socket_path'])
+        else:
+            redis_client = redis.StrictRedis(
+                host=config['redis']['host'], port=config['redis']['port'])
+
         __dbctx['redis'] = redis_client
     return __dbctx['redis']
 
