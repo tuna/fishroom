@@ -12,3 +12,4 @@ python-magic
 dateutils
 aiohttp
 matrix-client
+itchat
