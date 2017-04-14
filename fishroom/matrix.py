@@ -9,15 +9,18 @@ from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time, get_logger
 from .config import config
 import sys
+import re
 
 logger = get_logger("Matrix")
 
 class MatrixHandle(BaseBotInstance):
 
     ChanTag = ChannelType.Matrix
+    SupportMultiline = True
 
     def __init__(self, server, username, password, rooms, nick=None):
         client = MatrixClient(server)
+        self.viewer_url = server.strip('/') + "/_matrix/media/v1/download/"
 
         try:
             client.login_with_password(username, password)
@@ -63,30 +66,55 @@ class MatrixHandle(BaseBotInstance):
             room.add_listener(self.on_message)
 
         self.client = client
+        self.bot_msg_pattern = config['matrix'].get('bot_msg_pattern', None)
 
     def on_message(self, room, event):
         if event['sender'] == self.username:
             return
         logger.info("event received, type: {}".format(event['type']))
         if event['type'] == "m.room.member":
-            if event['membership'] == "join":
+            if event['content']['membership'] == "join":
                 logger.info("{0} joined".format(event['content']['displayname']))
         elif event['type'] == "m.room.message":
             sender = event['sender']
+            opt = {'matrix': sender}
             if sender not in self.displaynames.keys():
                 u_send = self.client.get_user(sender)
                 self.displaynames[sender] = u_send.get_display_name()
             sender = self.displaynames[sender]
 
-            if event['content']['msgtype'] == "m.text":
-                room_alias = self.room_id_to_alias[room.room_id]
-                date, time = get_now_date_time()
+            msgtype = event['content']['msgtype']
+            room_alias = self.room_id_to_alias[room.room_id]
+            date, time = get_now_date_time()
+            mtype = None
+            media_url = None
+            typedict = {
+                    "m.image": MessageType.Photo,
+                    "m.audio": MessageType.Audio,
+                    "m.video": MessageType.Video,
+                    "m.file": MessageType.File
+            }
+            if msgtype == "m.text" or msgtype == "m.notice":
                 mtype = MessageType.Text
-                logger.info("[{}] {}: {}".format(room_alias, sender, event['content']['body']))
+                msg_content = event['content']['body']
+            elif msgtype == "m.emote":
+                mtype = MessageType.Text
+                msg_content = "*{}* {}".format(sender, event['content']['body'])
+            elif msgtype in ["m.image", "m.audio", "m.video", "m.file"]:
+                new_url = event['content']['url'].replace("mxc://", self.viewer_url)
+                mtype = typedict[msgtype]
+                msg_content = "{} ({})\n{}".format(new_url, mtype, event['content']['body'])
+                media_url = new_url
+            else:
+                pass
+
+            logger.info("[{}] {}: {}".format(room_alias, sender, event['content']['body']))
+            if mtype is not None:
                 msg = Message(
                     ChannelType.Matrix,
-                    sender, room_alias, event['content']['body'],
-                    mtype=mtype, date=date, time=time)
+                    sender, room_alias, msg_content,
+                    mtype=mtype, date=date, time=time,
+                    media_url=media_url, opt=opt)
                 self.send_to_bus(self, msg)
 
     def send_to_bus(self, msg):
@@ -97,7 +125,11 @@ class MatrixHandle(BaseBotInstance):
 
     def send_msg(self, target, content, sender=None, first=False, **kwargs):
         target_room = self.joined_rooms[target]
-        target_room.send_text("[{}] {}".format(sender, content))
+        if self.bot_msg_pattern is not None and re.match(self.bot_msg_pattern, content) is not None:
+            target_room.send_text("{} sent the following message:".format(sender))
+            target_room.send_text(content)
+        else:
+            target_room.send_text("[{}] {}".format(sender, content))
 
 def Matrix2FishroomThread(mx: MatrixHandle, bus: MessageBus):
     if mx is None or isinstance(mx, EmptyBot):

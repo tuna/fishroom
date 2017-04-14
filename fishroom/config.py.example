@@ -51,6 +51,7 @@ config = {
     #     'user': 'fishroom',
     #     'password': '',
     #     'nick': 'bot_fishroom',
+    #     'bot_msg_pattern': '^mubot|^!wikipedia',
     # },
 
     # Optional, only if you use qiniu for file_store
