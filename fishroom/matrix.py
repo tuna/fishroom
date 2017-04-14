@@ -9,6 +9,7 @@ from .models import Message, ChannelType, MessageType
 from .helpers import get_now_date_time, get_logger
 from .config import config
 import sys
+import re
 
 logger = get_logger("Matrix")
 
@@ -65,6 +66,7 @@ class MatrixHandle(BaseBotInstance):
             room.add_listener(self.on_message)
 
         self.client = client
+        self.bot_msg_pattern = config['matrix'].get('bot_msg_pattern', None)
 
     def on_message(self, room, event):
         if event['sender'] == self.username:
@@ -123,7 +125,11 @@ class MatrixHandle(BaseBotInstance):
 
     def send_msg(self, target, content, sender=None, first=False, **kwargs):
         target_room = self.joined_rooms[target]
-        target_room.send_text("[{}] {}".format(sender, content))
+        if self.bot_msg_pattern is not None and re.match(self.bot_msg_pattern, content) is not None:
+            target_room.send_text("{} sent the following message:".format(sender))
+            target_room.send_text(content)
+        else:
+            target_room.send_text("[{}] {}".format(sender, content))
 
 def Matrix2FishroomThread(mx: MatrixHandle, bus: MessageBus):
     if mx is None or isinstance(mx, EmptyBot):
