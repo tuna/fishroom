@@ -13,6 +13,7 @@ class ChannelType(object):
     Telegram = "telegram"
     Gitter = "gitter"
     Matrix = "matrix"
+    Wechat = "wechat"
     Web = "web"
     API = "api"
 

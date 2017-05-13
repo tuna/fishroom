@@ -54,6 +54,9 @@ config = {
     #     'bot_msg_pattern': '^mubot|^!wikipedia',
     # },
 
+    # Uncomment these if you want WeChat access
+    # 'wechat': {},
+
     # Optional, only if you use qiniu for file_store
     # Comment this out if you don't use qiniu
     'qiniu': {
@@ -98,6 +101,12 @@ config = {
             "telegram": "-1001031857103",  # group id can be obtained using bot api
             "xmpp": 'chat@conference.xmpp.jp',
             "matrix": '#archlinux:matrixim.cc'
+        },
+        "test": {
+            # Use room nick name to identify a room
+            # TODO: use Uins (https://itchat.readthedocs.io/zh/latest/intro/contact/#uins)
+            # to identify a room, but currently I can't get room Uins on login.
+            "wechat": 'xxx chat room'
         }
     }
 }
