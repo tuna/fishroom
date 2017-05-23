@@ -157,6 +157,13 @@ class PostMessageHandler(tornado.web.RequestHandler):
             self.set_status(404)
             self.finish("Room not found")
             return
+
+        if not config["bindings"].get(room, {}).get("web_post", True):
+            message = "Web post is disabled."
+            self.write_json(403, message=message)
+            self.finish()
+            return
+
         try:
             self.json_data = json.loads(self.request.body.decode('utf-8'))
         except ValueError:
