@@ -41,6 +41,7 @@
 
 <div id="chatbar">
 	<div class="container">
+		{% if fishroom.config.config.get("bindings", {}).get(room, {}).get("web_post", True) %}
 		<div class="join-chat" v-show="!nickname">
 			<form class="form-inline" @submit="setNickname">
 				<div class="form-group">
@@ -64,6 +65,7 @@
 				<span class="btn btn-default" @click="unsetNickname" > Reset Nickname </span>
 			</form>
 		</div>
+		{% end %}
 		{% if not embedded %}
 		<div id="footer">
 				<div class="text-center">
