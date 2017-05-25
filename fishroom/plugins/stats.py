@@ -77,7 +77,7 @@ def hualao(cmd, *args, **kwargs):
     msg += "Mean {:.2f} +/− {:.2f} per person , {:.2f} per {}".format(
         mean_person,
         std_person,
-        time_average.
+        time_average,
         time_unit
     )
 
