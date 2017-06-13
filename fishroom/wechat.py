@@ -240,6 +240,7 @@ def Fishroom2WechatThread(wx: WechatHandle, bus: MessageBus):
 
 def init():
     global photo_store, wxHandle
+    redis_client = get_redis()
 
     provider = config['photo_store']['provider']
     if provider == "imgur":
@@ -250,7 +251,6 @@ def init():
     elif provider == "qiniu":
         photo_store = get_qiniu(redis_client, config)
 
-    redis_client = get_redis()
     im2fish_bus = MessageBus(redis_client, MsgDirection.im2fish)
     fish2im_bus = MessageBus(redis_client, MsgDirection.fish2im)
 
