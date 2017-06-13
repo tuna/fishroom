@@ -20,8 +20,13 @@ from ..config import config
 
 
 def get_redis():
-    r = tornadoredis.Client(
-        host=config['redis']['host'], port=config['redis']['port'])
+    if config['redis'].get('unix_socket_path') is not None:
+        r = tornadoredis.Client(
+            unix_socket_path=config['redis']['unix_socket_path'])
+    else:
+        r = tornadoredis.Client(
+            host=config['redis']['host'], port=config['redis']['port'])
+
     r.connect()
     return r
 
