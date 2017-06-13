@@ -14,12 +14,12 @@ def main():
     application = tornado.web.Application([
         (r"/", DefaultHandler),
         (r"/robots.txt", RobotsTxtHandler),
-        (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)", ChatLogHandler),
-        (r"/log/([a-z0-9_-]+)/([a-z0-9-]+)/([0-9]+)", TextStoreHandler),
-        (r"/messages/([a-z0-9_-]+)/", PostMessageHandler),
+        (r"/log/([a-zA-Z0-9_-]+)/([a-zA-Z0-9-]+)", ChatLogHandler),
+        (r"/log/([a-zA-Z0-9_-]+)/([a-zA-Z0-9-]+)/([0-9]+)", TextStoreHandler),
+        (r"/messages/([a-zA-Z0-9_-]+)/", PostMessageHandler),
         (r"/msg_stream", MessageStreamHandler),
         (r"/api/messages", APILongPollingHandler),
-        (r"/api/messages/([a-z0-9_-]+)/", APIPostMessageHandler),
+        (r"/api/messages/([a-zA-Z0-9_-]+)/", APIPostMessageHandler),
     ], debug=debug, autoreload=debug)
     application.listen(config['chatlog']['port'])
     print("Serving on port: {}".format(config['chatlog']['port']))
