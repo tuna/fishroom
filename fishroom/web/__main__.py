@@ -21,8 +21,8 @@ def main():
         (r"/api/messages", APILongPollingHandler),
         (r"/api/messages/([a-zA-Z0-9_-]+)/", APIPostMessageHandler),
     ], debug=debug, autoreload=debug)
-    application.listen(config['chatlog']['port'],address=config['chatlog']['host'])
-    print("Serving on",config['chatlog']['host'],":",format(config['chatlog']['port']))
+    application.listen(config['chatlog']['port'],address=config['chatlog'].get('host', '0.0.0.0'))
+    print("Serving on",config['chatlog'].get('host', '0.0.0.0'),":",format(config['chatlog']['port']))
     tornado.ioloop.IOLoop.instance().start()
 
 
