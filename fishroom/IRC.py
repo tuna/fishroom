@@ -43,7 +43,7 @@ class IRCHandle(BaseBotInstance):
         else:
             self.irc_conn.connect(server, port, nickname, password=password)
         self.irc_conn.last_pong = time.time()
-        self.reactor.execute_every(60, self.keep_alive_ping)
+        self.reactor.scheduler.execute_every(60, self.keep_alive_ping)
 
         for msg in ("welcome", "join", "privmsg", "pubmsg",
                     "action", "pong", "nicknameinuse"):
