@@ -1,7 +1,7 @@
 pytz
 redis
 marshmallow==2.1.0
-tornado
+tornado==4.5.2
 tornado-redis
 irc
 requests
@@ -10,6 +10,6 @@ pillow
 qiniu
 python-magic
 dateutils
-aiohttp
+aiohttp==2.3.3
 matrix-client
 itchat
