@@ -1,5 +1,5 @@
 """
-This is for text formating
+This is for text formatting
 
 IRC: https://github.com/myano/jenni/wiki/IRC-String-Formatting
 """
