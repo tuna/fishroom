@@ -1,5 +1,5 @@
 # fishroom
-![](https://img.shields.io/badge/license-AGPL-blue.svg)
+![GPL license](https://img.shields.io/badge/license-GPL-blue.svg)
 ![Proudly Powered by Python3](https://img.shields.io/badge/python-3.5-blue.svg)
 [![](https://img.shields.io/badge/%23chat-fishroom-brightgreen.svg)](https://fishroom.tuna.moe/)
 
@@ -167,7 +167,7 @@ Good Luck!
 
 ```
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 ```
