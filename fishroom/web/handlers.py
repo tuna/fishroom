@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
+import functools
 import json
 import re
+import tornado.escape
 import tornado.web
 import tornado.websocket
 import tornado.gen as gen
 import tornadoredis
 
 import hashlib
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urlencode
 from datetime import datetime, timedelta
+from .oauth import GitHubOAuth2Mixin
 from ..db import get_redis as get_pyredis
 from ..base import BaseBotInstance
 from ..bus import MessageBus, MsgDirection
@@ -36,8 +39,47 @@ pr = get_pyredis()
 mgb_im2fish = MessageBus(pr, MsgDirection.im2fish)
 
 
-class DefaultHandler(tornado.web.RequestHandler):
+def authenticated(method):
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if config.get('github', False) and not self.current_user:
+            if self.request.method in ("GET", "HEAD"):
+                url = self.get_login_url()
+                self.redirect(url + "?" + urlencode(dict(next=self.request.uri)))
+                return
+            raise HTTPError(403)
+        return method(self, *args, **kwargs)
+    return wrapper
 
+
+class BaseHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        return self.get_secure_cookie("session")
+
+
+class GitHubOAuth2LoginHandler(tornado.web.RequestHandler,
+                               GitHubOAuth2Mixin):
+
+    @gen.coroutine
+    def get(self):
+        if self.get_argument('code', False):
+            logged_in = yield self.get_authenticated_user(code=self.get_argument('code'))
+            if logged_in:
+                self.set_secure_cookie('session', 'ok')
+                self.redirect(self.get_argument('next', '/'))
+            else:
+                self.set_status(401)
+                self.finish('Unauthorized')
+        else:
+            yield self.authorize_redirect(
+                redirect_uri=config['baseurl'] + '/login?next=' + self.get_argument('next', '/'),
+                client_id=config['github']['client_id'],
+            )
+
+
+class DefaultHandler(BaseHandler):
+
+    @authenticated
     def get(self):
         url = "log/{room}/today".format(
             room=config["chatlog"]["default_channel"]
@@ -53,8 +95,9 @@ class RobotsTxtHandler(tornado.web.RequestHandler):
         self.finish()
 
 
-class TextStoreHandler(tornado.web.RequestHandler):
+class TextStoreHandler(BaseHandler):
 
+    @authenticated
     @gen.coroutine
     def get(self, room, date, msg_id):
         key = ChatLogger.LOG_QUEUE_TMPL.format(channel=room, date=date)
@@ -75,8 +118,9 @@ class TextStoreHandler(tornado.web.RequestHandler):
         )
 
 
-class ChatLogHandler(tornado.web.RequestHandler):
+class ChatLogHandler(BaseHandler):
 
+    @authenticated
     @gen.coroutine
     def get(self, room, date):
         if room not in config["bindings"] or \
@@ -147,7 +191,7 @@ class ChatLogHandler(tornado.web.RequestHandler):
         return "%d" % (int(m.hexdigest()[:8], 16) & 0x07)
 
 
-class PostMessageHandler(tornado.web.RequestHandler):
+class PostMessageHandler(BaseHandler):
 
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
@@ -156,6 +200,7 @@ class PostMessageHandler(tornado.web.RequestHandler):
         self.set_status(status_code)
         self.write(json.dumps(kwargs))
 
+    @authenticated
     def post(self, room):
         if room not in config["bindings"] or \
                 room in config.get("private_rooms", []):

@@ -4,7 +4,7 @@ import tornado.web
 from .handlers import (
     DefaultHandler, TextStoreHandler, ChatLogHandler, MessageStreamHandler,
     PostMessageHandler, APILongPollingHandler, APIPostMessageHandler,
-    RobotsTxtHandler
+    RobotsTxtHandler, GitHubOAuth2LoginHandler
 )
 from ..config import config
 
@@ -20,7 +20,8 @@ def main():
         (r"/msg_stream", MessageStreamHandler),
         (r"/api/messages", APILongPollingHandler),
         (r"/api/messages/([a-zA-Z0-9_-]+)/", APIPostMessageHandler),
-    ], debug=debug, autoreload=debug)
+        (r"/login", GitHubOAuth2LoginHandler),
+    ], debug=debug, autoreload=debug, login_url='/login', cookie_secret=config['cookie_secret'])
     application.listen(config['chatlog']['port'],address=config['chatlog'].get('host', '0.0.0.0'))
     print("Serving on",config['chatlog'].get('host', '0.0.0.0'),":",format(config['chatlog']['port']))
     tornado.ioloop.IOLoop.instance().start()

@@ -3,6 +3,7 @@ config = {
     "timezone": "Asia/Shanghai",
     "baseurl": "http://fishroom.example.com",  # do not end with "/"
     "name": "teleboto",
+    "cookie_secret": "123456", # you should use a strong random secret
     "cmd_me": "tg_bot",  # username of the telegram bot
 
     "redis": {
@@ -22,6 +23,13 @@ config = {
             "[Olaf]",
         ],
     },
+
+    # Uncomment these if you want GitHub OAuth
+    # Note that you need to configure your redirect uri the same as the baseurl in GitHub
+    # "github": {
+    #     "client_id": "", # get these two from github.com
+    #     "client_secret": "",
+    # },
 
     # Uncomment these if you want telegram access
     # "telegram": {
