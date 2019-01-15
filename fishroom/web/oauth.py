@@ -1,7 +1,7 @@
 import functools
-import tornado.auth
 import urllib.parse as urllib_parse
-from tornado import escape
+import tornado.auth
+import tornado.escape
 from ..config import config
 
 
@@ -20,13 +20,15 @@ class GitHubOAuth2Mixin(tornado.auth.OAuth2Mixin):
 
         http.fetch(self._OAUTH_ACCESS_TOKEN_URL,
                    functools.partial(self._on_access_token, callback),
-                   method="POST", headers={'Content-Type': 'application/x-www-form-urlencoded'}, body=body)
+                   method="POST", headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                   body=body)
 
 
-    def _on_access_token(self, future, response):
+    @staticmethod
+    def _on_access_token(future, response):
         if response.error:
-            future.set_exception(AuthError('GitHub auth error: %s' % str(response)))
+            future.set_exception(tornado.auth.AuthError('GitHub auth error: %s' % str(response)))
             return
 
-        args = escape.parse_qs_bytes(escape.native_str(response.body))
+        args = tornado.escape.parse_qs_bytes(tornado.escape.native_str(response.body))
         future.set_result(bool(args.get('access_token')))

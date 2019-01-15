@@ -47,7 +47,7 @@ def authenticated(method):
                 url = self.get_login_url()
                 self.redirect(url + "?" + urlencode(dict(next=self.request.uri)))
                 return
-            raise HTTPError(403)
+            raise tornado.web.HTTPError(403)
         return method(self, *args, **kwargs)
     return wrapper
 
