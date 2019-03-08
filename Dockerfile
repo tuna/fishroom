@@ -17,7 +17,7 @@ USER root
 # 	echo "index-url=https://pypi.tuna.tsinghua.edu.cn/simple" >> /etc/pip.conf
 
 RUN apt-get update && \
-	apt-get install -y libmagic1 libjpeg62-turbo libjpeg-dev libpng12-0 libpng-dev libwebp5 libwebp-dev zlib1g zlib1g-dev gcc mime-support
+	apt-get install -y libmagic1 libjpeg62-turbo libjpeg-dev libpng-dev libwebp-dev zlib1g zlib1g-dev gcc mime-support
 
 RUN python3 -m ensurepip && \
 	pip3 install --upgrade pip setuptools 
